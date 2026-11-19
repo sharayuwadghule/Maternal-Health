@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     phone TEXT NOT NULL UNIQUE,
     language TEXT NOT NULL DEFAULT 'en' CHECK (language IN ('en', 'hi', 'mr')),
     phc_id UUID REFERENCES public.phcs(id) ON DELETE SET NULL,
-    pin_hash TEXT, -- For non-OTP/offline ASHA PIN login
+    pin_hash TEXT, -- DEPRECATED: unused. Staff PINs are device-local salted hashes (see AuthRepository).
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
@@ -391,3 +391,87 @@ CREATE POLICY "Decide escalations"
         escalated_to = public.current_profile_id()
         OR public.current_profile_role() = 'supervisor'
     );
+
+-- ============================================================================
+-- POLICIES REQUIRED BY THE APP'S OFFLINE OUTBOX (v3)
+-- The outbox replays writes as idempotent UPSERTs, which need INSERT and
+-- UPDATE permission. Without these, mothers' danger-sign alerts and SOS
+-- events are rejected by RLS.
+-- ============================================================================
+
+-- Mothers raise alerts for themselves; health workers raise alerts for anyone.
+CREATE POLICY "Create alerts"
+    ON public.alerts FOR INSERT
+    WITH CHECK (
+        patient_id IN (SELECT id FROM public.patients WHERE profile_id = public.current_profile_id())
+        OR public.current_profile_role() IN ('asha', 'anm', 'supervisor')
+    );
+
+CREATE POLICY "Patients update own medicine logs"
+    ON public.medicine_logs FOR UPDATE
+    USING (
+        patient_id IN (SELECT id FROM public.patients WHERE profile_id = public.current_profile_id())
+    );
+
+CREATE POLICY "Health workers update own visits"
+    ON public.visits FOR UPDATE
+    USING (recorded_by = public.current_profile_id());
+
+CREATE POLICY "Escalator updates own escalation"
+    ON public.escalations FOR UPDATE
+    USING (escalated_by = public.current_profile_id());
+
+CREATE POLICY "ANM confirms HRP"
+    ON public.patients FOR UPDATE
+    USING (
+        EXISTS (
+            SELECT 1 FROM public.assignments
+            WHERE patient_id = patients.id AND anm_id = public.current_profile_id()
+        )
+        OR public.current_profile_role() = 'supervisor'
+    );
+
+-- SOS events
+CREATE POLICY "Patients raise SOS"
+    ON public.sos_events FOR INSERT
+    WITH CHECK (
+        patient_id IN (SELECT id FROM public.patients WHERE profile_id = public.current_profile_id())
+    );
+
+CREATE POLICY "View SOS"
+    ON public.sos_events FOR SELECT
+    USING (
+        patient_id IN (SELECT id FROM public.patients WHERE profile_id = public.current_profile_id())
+        OR EXISTS (
+            SELECT 1 FROM public.assignments
+            WHERE patient_id = sos_events.patient_id
+            AND (asha_id = public.current_profile_id() OR anm_id = public.current_profile_id())
+        )
+        OR public.current_profile_role() = 'supervisor'
+    );
+
+CREATE POLICY "Health workers respond to SOS"
+    ON public.sos_events FOR UPDATE
+    USING (
+        EXISTS (
+            SELECT 1 FROM public.assignments
+            WHERE patient_id = sos_events.patient_id
+            AND (asha_id = public.current_profile_id() OR anm_id = public.current_profile_id())
+        )
+        OR public.current_profile_role() = 'supervisor'
+    );
+
+-- Care team contacts for the signed-in mother (used by the SOS screen).
+-- RLS hides other profiles from mothers, so expose only name/phone/role of
+-- her actively assigned ASHA and ANM.
+CREATE OR REPLACE FUNCTION public.get_my_care_team()
+RETURNS TABLE (role TEXT, name TEXT, phone TEXT) AS $$
+    SELECT pr.role, pr.name, pr.phone
+    FROM public.patients p
+    JOIN public.assignments a ON a.patient_id = p.id AND a.is_active
+    JOIN public.profiles pr ON pr.id IN (a.asha_id, a.anm_id)
+    WHERE p.profile_id = public.current_profile_id();
+$$ LANGUAGE SQL STABLE SECURITY DEFINER SET search_path = public;
+
+REVOKE ALL ON FUNCTION public.get_my_care_team() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_my_care_team() TO authenticated;

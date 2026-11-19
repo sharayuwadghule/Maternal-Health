@@ -12,7 +12,7 @@ class PatientRepository {
     PatientModel(
       id: '55555555-5555-5555-5555-555555555501',
       profileId: '33333333-3333-3333-3333-333333333301',
-      name: 'Priyanka More (Demo Mother)',
+      name: 'Priyanka More',
       phone: '9811111101',
       dateOfBirth: DateTime(1998, 4, 12),
       lmp: DateTime.now().subtract(const Duration(days: 160)),
@@ -137,65 +137,50 @@ class PatientRepository {
     return cached;
   }
 
-  /// Get patients assigned to a specific ASHA worker
+  /// Patients assigned to a specific ASHA worker. Never falls back to
+  /// "all patients" – an ASHA must only see her own mothers.
   Future<List<PatientModel>> getPatientsForAsha(String ashaId) async {
     final all = await getAllPatients();
-    // In demo mode or if no specific ID matching, return the assigned or relevant patients
-    final filtered = all.where((p) => p.assignedAshaId == ashaId).toList();
-    return filtered.isNotEmpty ? filtered : all;
+    return all.where((p) => p.assignedAshaId == ashaId).toList();
   }
 
-  /// Get single patient by ID
+  /// Get single patient by ID. Returns null when unknown – never another
+  /// patient's record.
   Future<PatientModel?> getPatientById(String id) async {
     await ensureCachePopulated();
     final raw = LocalDb.patientsBox.get(id);
-    if (raw != null) {
-      return PatientModel.fromMap(Map<String, dynamic>.from(raw as Map));
+    if (raw == null) return null;
+    return PatientModel.fromMap(Map<String, dynamic>.from(raw as Map));
+  }
+
+  /// Synchronous lookup of the patient record linked to a login profile.
+  PatientModel? findByProfileId(String? profileId) {
+    if (profileId == null || profileId.isEmpty) return null;
+    for (final raw in LocalDb.patientsBox.values) {
+      final map = Map<String, dynamic>.from(raw as Map);
+      if (map['profile_id'] == profileId) return PatientModel.fromMap(map);
     }
-    return defaultSeedPatients.firstWhere((p) => p.id == id, orElse: () => defaultSeedPatients.first);
+    return null;
   }
 
   /// Mark or confirm High-Risk Pregnancy status (ANM action)
-  Future<void> confirmHrp(String patientId, String hrpCategory) async {
+  Future<void> confirmHrp(String patientId, String hrpCategory, {String? confirmedBy}) async {
     final patient = await getPatientById(patientId);
-    if (patient != null) {
-      final updated = PatientModel(
-        id: patient.id,
-        profileId: patient.profileId,
-        name: patient.name,
-        phone: patient.phone,
-        dateOfBirth: patient.dateOfBirth,
-        lmp: patient.lmp,
-        edd: patient.edd,
-        heightCm: patient.heightCm,
-        bloodGroup: patient.bloodGroup,
-        rhNegative: patient.rhNegative,
-        gravida: patient.gravida,
-        para: patient.para,
-        previousCSection: patient.previousCSection,
-        stillbirthHistory: patient.stillbirthHistory,
-        pregnancyLossHistory: patient.pregnancyLossHistory,
-        pphHistory: patient.pphHistory,
-        isTwin: patient.isTwin,
-        hasDiabetes: patient.hasDiabetes,
-        hasGestationalDiabetes: patient.hasGestationalDiabetes,
-        isConfirmedHrp: true,
-        hrpCategory: hrpCategory,
-        assignedAshaId: patient.assignedAshaId,
-        assignedAnmId: patient.assignedAnmId,
-      );
-      await LocalDb.patientsBox.put(patient.id, updated.toMap());
+    if (patient == null) return;
 
-      await LocalDb.enqueueSync(
-        table: 'patients',
-        action: 'update',
-        payload: {
-          'id': patientId,
-          'is_confirmed_hrp': true,
-          'hrp_category': hrpCategory,
-          'confirmed_at': DateTime.now().toIso8601String(),
-        },
-      );
-    }
+    final updated = patient.withHrp(confirmed: true, category: hrpCategory);
+    await LocalDb.patientsBox.put(patient.id, updated.toMap());
+
+    await LocalDb.enqueueSync(
+      table: 'patients',
+      action: 'update',
+      payload: {
+        'id': patientId,
+        'is_confirmed_hrp': true,
+        'hrp_category': hrpCategory,
+        'confirmed_at': DateTime.now().toIso8601String(),
+        'confirmed_by_anm_id': ?confirmedBy,
+      },
+    );
   }
 }

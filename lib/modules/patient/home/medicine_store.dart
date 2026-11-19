@@ -3,8 +3,11 @@
 // the patient has marked as taken on each calendar date.
 
 import 'package:flutter/foundation.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import '../../../core/database/local_db.dart';
 import '../../../core/repositories/medicine_repository.dart';
+import '../../../core/repositories/patient_repository.dart';
+import '../../../app_state.dart';
 
 /// The fixed list of assigned medicines.
 class AssignedMedicine {
@@ -82,6 +85,7 @@ class MedicineStore extends ChangeNotifier {
 
   /// Populate state from persistent Hive box
   void initFromHive() {
+    if (!Hive.isBoxOpen(LocalDb.medicinesBoxName)) return;
     try {
       final box = LocalDb.medicinesBox;
       for (final raw in box.values) {
@@ -111,8 +115,12 @@ class MedicineStore extends ChangeNotifier {
     }
 
     // Persist to Hive & sync to outbox in background
+    final patientId = PatientRepository.instance
+            .findByProfileId(AppState.instance.currentUser?.id)
+            ?.id ??
+        MedicineRepository.demoPatientId;
     MedicineRepository.instance.toggleMedicine(
-      patientId: MedicineRepository.demoPatientId,
+      patientId: patientId,
       medicine: _resolveMedicineName(medicineId),
       date: date,
     );

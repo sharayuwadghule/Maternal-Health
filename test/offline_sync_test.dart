@@ -15,12 +15,9 @@ void main() {
   setUpAll(() async {
     tempDir = await Directory.systemTemp.createTemp('hive_offline_test');
     Hive.init(tempDir.path);
-    await Hive.openBox(LocalDb.patientsBoxName);
-    await Hive.openBox(LocalDb.visitsBoxName);
-    await Hive.openBox(LocalDb.alertsBoxName);
-    await Hive.openBox(LocalDb.medicinesBoxName);
-    await Hive.openBox(LocalDb.syncQueueBoxName);
-    await Hive.openBox(LocalDb.prefsBoxName);
+    for (final name in LocalDb.allBoxNames) {
+      await Hive.openBox(name);
+    }
 
     await PatientRepository.instance.ensureCachePopulated();
   });

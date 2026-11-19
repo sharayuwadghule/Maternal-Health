@@ -1,200 +1,167 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../app_state.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/ui_kit.dart';
 
 class NearestClinicScreen extends StatelessWidget {
   const NearestClinicScreen({super.key});
 
+  /// Opens the phone's maps app searching for the facility near the user.
+  Future<void> _directions(BuildContext context, String query) async {
+    final uri = Uri.https('www.google.com', '/maps/search/', {'api': '1', 'query': '$query near me'});
+    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!ok && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open maps on this device.')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final state = AppState.instance;
+    final state = context.watch<AppState>();
+    final theme = Theme.of(context);
+
+    final clinics = [
+      (state.translate('Primary Health Centre (PHC)', 'प्राथमिक स्वास्थ्य केंद्र', 'प्राथमिक आरोग्य केंद्र'), 'Primary Health Centre', '1.2 km', state.translate('Free checkups · PMSMA on 9th', 'मुफ्त जांच · 9 तारीख को PMSMA', 'मोफत तपासणी · ९ तारखेला PMSMA'), true, AppColors.mint, AppColors.success),
+      (state.translate('District Civil Hospital', 'जिला सिविल अस्पताल', 'जिल्हा सामान्य रुग्णालय'), 'District Hospital', '4.5 km', state.translate('Delivery · blood bank · 24×7', 'प्रसव · ब्लड बैंक · 24×7', 'प्रसूती · रक्तपेढी · २४×७'), true, AppColors.sky, AppColors.info),
+      (state.translate('Maternity Clinic', 'मातृत्व क्लिनिक', 'प्रसूतिगृह'), 'Maternity Clinic', '5.8 km', state.translate('Sonography · closes 5 PM', 'सोनोग्राफी · शाम 5 बजे बंद', 'सोनोग्राफी · ५ वाजता बंद'), false, AppColors.lavender, Color(0xFF6B4FD8)),
+    ];
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F4F8),
-      appBar: AppBar(
-        title: Text(
-          state.translate('Nearest Clinics', 'निकटतम क्लीनिक', 'जवळचे क्लिनिक'),
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-      ),
-      body: Column(
+      appBar: AppBar(title: Text(state.translate('Nearest clinics', 'निकटतम क्लिनिक', 'जवळचे दवाखाने'))),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(AppSpacing.lg - 4, AppSpacing.sm, AppSpacing.lg - 4, AppSpacing.lg),
         children: [
-          // Simulated Map Area
-          Container(
-            height: 250,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.blue.shade100,
-              image: const DecorationImage(
-                image: NetworkImage('https://maps.googleapis.com/maps/api/staticmap?center=20.5937,78.9629&zoom=14&size=600x300&maptype=roadmap&markers=color:red%7Clabel:H%7C20.5937,78.9629&key=YOUR_API_KEY'), // Simulated static map visual (if fails to load, background color is visible)
-                fit: BoxFit.cover,
-                // We'll use a placeholder if network fails
-              ),
-            ),
-            child: Stack(
-              children: [
-                // Fallback map pattern if image fails
-                Positioned.fill(
-                  child: Opacity(
-                    opacity: 0.5,
-                    child: GridView.builder(
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 6,
+          // ── Map preview ──────────────────────────────────────────────
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            child: Container(
+              height: 190,
+              color: AppColors.sky,
+              child: Stack(
+                children: [
+                  Positioned.fill(child: CustomPaint(painter: _MapGridPainter())),
+                  const Positioned(top: 34, left: 40, child: _Pin(label: 'PHC', color: AppColors.success)),
+                  const Positioned(bottom: 30, right: 44, child: _Pin(label: 'Hospital', color: AppColors.info)),
+                  Center(
+                    child: Container(
+                      width: 22,
+                      height: 22,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 4),
+                        boxShadow: const [BoxShadow(color: Color(0x332B2440), blurRadius: 12)],
                       ),
-                      itemBuilder: (context, index) => Icon(Icons.add, color: Colors.blue.shade200, size: 20),
                     ),
                   ),
-                ),
-                // Center pin
-                Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.shade800,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Text('You are here', style: TextStyle(color: Colors.white, fontSize: 12)),
-                      ),
-                      const SizedBox(height: 4),
-                      const Icon(Icons.location_on, color: Colors.red, size: 40),
-                    ],
-                  ),
-                ),
-                Positioned(
-                  top: 40,
-                  left: 60,
-                  child: _buildMapPin('Rural PHC'),
-                ),
-                Positioned(
-                  bottom: 50,
-                  right: 80,
-                  child: _buildMapPin('District Hospital'),
-                ),
-              ],
-            ),
-          ),
-          
-          // Clinic List
-          Expanded(
-            child: Container(
-              transform: Matrix4.translationValues(0, -20, 0),
-              decoration: const BoxDecoration(
-                color: Color(0xFFF0F4F8),
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-              ),
-              child: ListView(
-                padding: const EdgeInsets.all(20),
-                children: [
-                  Text(
-                    state.translate('Nearby Facilities', 'आसपास की सुविधाएं', 'जवळपासच्या सुविधा'),
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildClinicCard(
-                    context, 
-                    state.translate('Primary Health Centre (PHC)', 'प्राथमिक स्वास्थ्य केंद्र', 'प्राथमिक आरोग्य केंद्र'), 
-                    '1.2 km', 
-                    true
-                  ),
-                  const SizedBox(height: 12),
-                  _buildClinicCard(
-                    context, 
-                    state.translate('District Civil Hospital', 'जिला सिविल अस्पताल', 'जिल्हा सामान्य रुग्णालय'), 
-                    '4.5 km', 
-                    false
-                  ),
-                  const SizedBox(height: 12),
-                  _buildClinicCard(
-                    context, 
-                    state.translate('Maternity Clinic', 'मातृत्व क्लिनिक', 'प्रसूतिगृह'), 
-                    '5.8 km', 
-                    false
+                  Positioned(
+                    left: 12,
+                    bottom: 12,
+                    child: FilledButton.icon(
+                      style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: AppColors.primary, minimumSize: const Size(0, 40), shape: const StadiumBorder()),
+                      onPressed: () => _directions(context, 'hospital'),
+                      icon: const Icon(Icons.map_rounded, size: 18),
+                      label: Text(state.translate('Open in Maps', 'मैप्स में खोलें', 'मॅप्समध्ये उघडा')),
+                    ),
                   ),
                 ],
               ),
             ),
           ),
+          const SizedBox(height: AppSpacing.lg),
+          SectionTitle(state.translate('Nearby facilities', 'आसपास की सुविधाएं', 'जवळपासच्या सुविधा')),
+          for (final c in clinics) ...[
+            SoftCard(
+              child: Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(color: c.$6, borderRadius: BorderRadius.circular(AppRadius.sm)),
+                    child: Icon(Icons.local_hospital_rounded, color: c.$7),
+                  ),
+                  const SizedBox(width: AppSpacing.md - 2),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(c.$1, style: theme.textTheme.titleMedium, maxLines: 1, overflow: TextOverflow.ellipsis),
+                        Text(c.$4, style: theme.textTheme.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            const Icon(Icons.near_me_rounded, size: 14, color: AppColors.textSecondary),
+                            const SizedBox(width: 4),
+                            Text(c.$3, style: theme.textTheme.bodySmall),
+                            const SizedBox(width: AppSpacing.sm),
+                            c.$5
+                                ? StatusPill.success(state.translate('Open', 'खुला', 'उघडे'))
+                                : StatusPill.warning(state.translate('Closes soon', 'जल्द बंद', 'लवकरच बंद')),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  Material(
+                    color: AppColors.primary,
+                    shape: const CircleBorder(),
+                    child: IconButton(
+                      tooltip: state.translate('Directions', 'रास्ता', 'मार्ग'),
+                      onPressed: () => _directions(context, c.$2),
+                      icon: const Icon(Icons.directions_rounded, color: Colors.white, size: 20),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm + 4),
+          ],
         ],
       ),
     );
   }
+}
 
-  Widget _buildMapPin(String label) {
+class _Pin extends StatelessWidget {
+  final String label;
+  final Color color;
+  const _Pin({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4), boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)]),
-          child: Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(AppRadius.pill)),
+          child: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color)),
         ),
-        const Icon(Icons.local_hospital, color: Colors.green, size: 24),
+        Icon(Icons.location_on_rounded, color: color, size: 28),
       ],
     );
   }
+}
 
-  Widget _buildClinicCard(BuildContext context, String title, String distance, bool isOpen) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4)),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.blue.shade50,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(Icons.local_hospital, color: Colors.blue, size: 32),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(Icons.location_on, size: 14, color: Colors.grey.shade600),
-                    const SizedBox(width: 4),
-                    Text(distance, style: TextStyle(color: Colors.grey.shade600)),
-                    const SizedBox(width: 12),
-                    Icon(Icons.access_time, size: 14, color: isOpen ? Colors.green : Colors.orange),
-                    const SizedBox(width: 4),
-                    Text(isOpen ? 'Open Now' : 'Closes 5 PM', style: TextStyle(color: isOpen ? Colors.green : Colors.orange, fontSize: 12)),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Starting navigation... (Demo Mode)')),
-              );
-            },
-            icon: const Icon(Icons.directions, color: Colors.blue),
-            style: IconButton.styleFrom(
-              backgroundColor: Colors.blue.shade50,
-            ),
-          )
-        ],
-      ),
-    );
+class _MapGridPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final road = Paint()
+      ..color = Colors.white.withValues(alpha: 0.8)
+      ..strokeWidth = 10
+      ..strokeCap = StrokeCap.round;
+    final lane = Paint()
+      ..color = Colors.white.withValues(alpha: 0.5)
+      ..strokeWidth = 4;
+    canvas.drawLine(Offset(0, size.height * 0.62), Offset(size.width, size.height * 0.38), road);
+    canvas.drawLine(Offset(size.width * 0.35, 0), Offset(size.width * 0.55, size.height), road);
+    for (var x = 0.0; x < size.width; x += 56) {
+      canvas.drawLine(Offset(x, 0), Offset(x + 30, size.height), lane);
+    }
   }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

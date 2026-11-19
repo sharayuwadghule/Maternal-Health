@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../config/app_config.dart';
+import '../theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import '../services/sync_service.dart';
 import '../database/local_db.dart';
@@ -26,26 +28,26 @@ class SyncStatusBadge extends StatelessWidget {
     String label;
 
     if (isSyncing) {
-      badgeColor = Colors.blue.shade50;
-      textColor = const Color(0xFF0077B6);
+      badgeColor = AppColors.infoContainer;
+      textColor = AppColors.primary;
       icon = Icons.sync;
       label = 'Syncing...';
     } else if (!isOnline) {
-      badgeColor = isSimulated ? Colors.orange.shade50 : Colors.red.shade50;
-      textColor = isSimulated ? Colors.orange.shade900 : Colors.red.shade900;
+      badgeColor = isSimulated ? AppColors.warningContainer : AppColors.dangerContainer;
+      textColor = isSimulated ? AppColors.warning : AppColors.danger;
       icon = Icons.cloud_off_rounded;
       label = isSimulated ? 'Offline (Demo)' : 'Offline';
       if (pendingCount > 0) {
         label = '$label • $pendingCount';
       }
     } else if (pendingCount > 0) {
-      badgeColor = Colors.amber.shade50;
-      textColor = Colors.amber.shade900;
+      badgeColor = AppColors.warningContainer;
+      textColor = AppColors.warning;
       icon = Icons.cloud_upload_outlined;
       label = '$pendingCount Pending';
     } else {
-      badgeColor = Colors.green.shade50;
-      textColor = const Color(0xFF2E7D32);
+      badgeColor = AppColors.successContainer;
+      textColor = AppColors.success;
       icon = Icons.cloud_done_rounded;
       label = 'Synced';
     }
@@ -149,7 +151,7 @@ class _SyncDetailsSheetState extends State<_SyncDetailsSheet> {
               width: 44,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: AppColors.border,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -160,12 +162,12 @@ class _SyncDetailsSheetState extends State<_SyncDetailsSheet> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: isOnline ? Colors.green.shade50 : Colors.orange.shade50,
+                  color: isOnline ? AppColors.successContainer : AppColors.warningContainer,
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   isOnline ? Icons.cloud_done_rounded : Icons.cloud_off_rounded,
-                  color: isOnline ? Colors.green : Colors.orange,
+                  color: isOnline ? AppColors.success : AppColors.warning,
                   size: 26,
                 ),
               ),
@@ -184,7 +186,7 @@ class _SyncDetailsSheetState extends State<_SyncDetailsSheet> {
                           : (isSimulated
                               ? state.translate('Simulated Airplane Mode active', 'सिम्युलेटेड एयरप्लेन मोड सक्रिय', 'सिम्युलेटेड एअरप्लेन मोड सुरू')
                               : state.translate('No network detected', 'नेटवर्क उपलब्ध नाही', 'नेटवर्क सापडले नाही')),
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                      style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                     ),
                   ],
                 ),
@@ -194,17 +196,17 @@ class _SyncDetailsSheetState extends State<_SyncDetailsSheet> {
           const SizedBox(height: 16),
           const Divider(),
 
-          // ── Offline Mode Switch (Judge Demo Trigger) ─────────────────────
-          Container(
+          // ── Offline Mode Switch (demo builds only) ───────────────────────
+          if (AppConfig.demoMode) Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
+              color: AppColors.muted,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade200),
+              border: Border.all(color: AppColors.border),
             ),
             child: Row(
               children: [
-                const Icon(Icons.airplanemode_active, color: Color(0xFF0077B6), size: 24),
+                const Icon(Icons.airplanemode_active, color: AppColors.primary, size: 24),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -216,14 +218,14 @@ class _SyncDetailsSheetState extends State<_SyncDetailsSheet> {
                       ),
                       Text(
                         state.translate('Forces outbox queuing for competition demonstration', 'प्रतियोगिता प्रदर्शन के लिए आउटबॉक्स कतार का परीक्षण करें', 'स्पर्धा प्रात्यक्षिकासाठी आउटबॉक्स रांग तपासा'),
-                        style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                        style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
                       ),
                     ],
                   ),
                 ),
                 Switch(
                   value: isSimulated,
-                  activeThumbColor: const Color(0xFF0077B6),
+                  activeThumbColor: AppColors.primary,
                   onChanged: (val) {
                     syncService.setSimulatedOffline(val);
                     setState(() {});
@@ -245,7 +247,7 @@ class _SyncDetailsSheetState extends State<_SyncDetailsSheet> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                 decoration: BoxDecoration(
-                  color: pendingCount > 0 ? Colors.orange.shade100 : Colors.green.shade100,
+                  color: pendingCount > 0 ? AppColors.warningContainer : AppColors.successContainer,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -253,7 +255,7 @@ class _SyncDetailsSheetState extends State<_SyncDetailsSheet> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: pendingCount > 0 ? Colors.orange.shade900 : Colors.green.shade900,
+                    color: pendingCount > 0 ? AppColors.warning : AppColors.success,
                   ),
                 ),
               ),
@@ -261,22 +263,50 @@ class _SyncDetailsSheetState extends State<_SyncDetailsSheet> {
           ),
           const SizedBox(height: 8),
 
+          if (syncService.deadLetterCount > 0) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.dangerContainer,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.error_outline_rounded, color: AppColors.danger, size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      state.translate(
+                        '${syncService.deadLetterCount} records were rejected by the server and need review by your PHC.',
+                        '${syncService.deadLetterCount} रिकॉर्ड सर्वर ने अस्वीकार किए; PHC द्वारा समीक्षा आवश्यक।',
+                        '${syncService.deadLetterCount} नोंदी सर्व्हरने नाकारल्या; PHC कडून तपासणी आवश्यक.',
+                      ),
+                      style: const TextStyle(fontSize: 12, color: AppColors.danger, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+
           if (queueItems.isEmpty)
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.green.shade50.withValues(alpha: 0.5),
+                color: AppColors.successContainer.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.check_circle_outline, color: Colors.green, size: 20),
+                  const Icon(Icons.check_circle_outline, color: AppColors.success, size: 20),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       state.translate('All local records are synchronized with server.', 'सभी स्थानीय रिकॉर्ड सर्वर के साथ समन्वयित हैं।', 'सर्व स्थानिक नोंदी सर्व्हरशी सिंक केलेल्या आहेत.'),
-                      style: const TextStyle(fontSize: 12, color: Colors.green),
+                      style: const TextStyle(fontSize: 12, color: AppColors.success),
                     ),
                   ),
                 ],
@@ -294,13 +324,13 @@ class _SyncDetailsSheetState extends State<_SyncDetailsSheet> {
                   return Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
+                      color: AppColors.muted,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey.shade200),
+                      border: Border.all(color: AppColors.border),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.outbox, size: 16, color: Colors.grey),
+                        const Icon(Icons.outbox, size: 16, color: AppColors.textSecondary),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -312,7 +342,7 @@ class _SyncDetailsSheetState extends State<_SyncDetailsSheet> {
                           item['enqueued_at'] != null
                               ? item['enqueued_at'].toString().substring(11, 16)
                               : '',
-                          style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                          style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
                         ),
                       ],
                     ),
@@ -329,7 +359,7 @@ class _SyncDetailsSheetState extends State<_SyncDetailsSheet> {
             height: 46,
             child: ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0077B6),
+                backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
@@ -364,7 +394,7 @@ class _SyncDetailsSheetState extends State<_SyncDetailsSheet> {
                       messenger.showSnackBar(
                         SnackBar(
                           content: Text(result.message),
-                          backgroundColor: result.success ? const Color(0xFF2E7D32) : Colors.red,
+                          backgroundColor: result.success ? AppColors.success : AppColors.danger,
                         ),
                       );
                     },

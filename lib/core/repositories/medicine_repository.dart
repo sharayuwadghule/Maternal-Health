@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../database/local_db.dart';
 import '../models/medicine_log_model.dart';
-import '../network/supabase_service.dart';
 
 class MedicineRepository {
   MedicineRepository._();
@@ -82,28 +81,12 @@ class MedicineRepository {
     // 1. Write to local Hive cache immediately
     await LocalDb.medicinesBox.put(id, log.toMap());
 
-    // 2. Enqueue into offline sync outbox
+    // 2. Enqueue into offline sync outbox (upserted on patient/medicine/date)
     await LocalDb.enqueueSync(
       table: 'medicine_logs',
-      action: 'insert',
+      action: 'upsert',
       payload: log.toMap(),
     );
-
-    // 3. If connected to Supabase, push immediately in background
-    if (SupabaseService.instance.isConfigured) {
-      try {
-        final client = SupabaseService.instance.client;
-        await client?.from('medicine_logs').upsert({
-          'patient_id': patientId,
-          'medicine': medicine,
-          'log_date': _formatDate(date),
-          'taken': newTakenStatus,
-          'logged_at': DateTime.now().toIso8601String(),
-        });
-      } catch (e) {
-        debugPrint('Supabase medicine sync failed, will retry from outbox: $e');
-      }
-    }
 
     return newTakenStatus;
   }

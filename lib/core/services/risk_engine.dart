@@ -125,6 +125,20 @@ class RiskEngine {
       reasonsMr.add('फेफरे / झटके');
     }
 
+    if (dangerSigns.contains('severe_abdominal_pain')) {
+      immediateDanger = true;
+      reasonsEn.add('Severe Abdominal Pain');
+      reasonsHi.add('पेट में तेज दर्द');
+      reasonsMr.add('पोटात तीव्र वेदना');
+    }
+
+    if (dangerSigns.contains('leaking_fluid')) {
+      immediateDanger = true;
+      reasonsEn.add('Leaking Amniotic Fluid');
+      reasonsHi.add('योनि से पानी आना');
+      reasonsMr.add('योनीतून पाणी जाणे');
+    }
+
     if (dangerSigns.contains('absent_fetal_movement') || dangerSigns.contains('reduced_fetal_movement')) {
       immediateDanger = true;
       reasonsEn.add('Reduced / Absent Fetal Movement');

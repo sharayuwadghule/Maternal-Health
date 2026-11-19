@@ -1,12 +1,15 @@
 import 'package:flutter/foundation.dart';
+import '../../app_state.dart';
 import '../database/local_db.dart';
-import '../models/alert_model.dart';
 import '../models/medicine_log_model.dart';
-import '../models/patient_model.dart';
-import '../network/supabase_service.dart';
 import '../repositories/alert_repository.dart';
 import '../repositories/patient_repository.dart';
 
+/// Closed loop: missed tablets -> ASHA alert -> ANM escalation -> HRP decision.
+///
+/// All steps are offline-first: they write to Hive and the sync outbox. The
+/// server never receives a direct RPC in addition to the outbox write, so
+/// escalations are not duplicated when the device is online.
 class ClosedLoopService extends ChangeNotifier {
   ClosedLoopService._();
   static final ClosedLoopService instance = ClosedLoopService._();
@@ -15,7 +18,9 @@ class ClosedLoopService extends ChangeNotifier {
   static const String demoAshaId = '22222222-2222-2222-2222-222222222241';
   static const String demoAnmId = '22222222-2222-2222-2222-222222222231';
 
-  /// Step 1: Simulate 4 consecutive missed days for Priyanka More
+  String get _currentUserIdOr => AppState.instance.currentUser?.id ?? '';
+
+  /// Demo step 1: simulate 4 consecutive missed days for the demo mother.
   Future<void> simulateConsecutiveMissedDays() async {
     final now = DateTime.now();
     for (int i = 1; i <= 4; i++) {
@@ -34,124 +39,74 @@ class ClosedLoopService extends ChangeNotifier {
       }
     }
 
-    // Step 2: Auto-trigger alert for ASHA Savita Tai
-    final alert = AlertModel(
-      id: 'alert-loop-01',
+    // Step 2: alert for the assigned ASHA.
+    await AlertRepository.instance.createAlert(
+      id: AlertRepository.demoMedicineAlertId,
       patientId: demoPatientId,
-      patientName: 'Priyanka More (Demo Mother)',
+      patientName: 'Priyanka More',
       type: 'missed_dose_3_days',
       severity: 'urgent',
-      status: AlertStatus.open,
       assignedTo: demoAshaId,
-      message: '🚨 Automated Detection: Priyanka More has missed Iron & Calcium for 4 consecutive days!',
-      createdAt: DateTime.now(),
-    );
-
-    await LocalDb.alertsBox.put(alert.id, alert.toMap());
-    await LocalDb.enqueueSync(
-      table: 'alerts',
-      action: 'insert',
-      payload: alert.toMap(),
+      message: 'Automated detection: Priyanka More has missed Iron & Calcium for 4 consecutive days.',
     );
 
     notifyListeners();
-    debugPrint('Closed Loop Step 1 & 2: Missed doses simulated -> Alert created for ASHA.');
   }
 
-  /// Step 3: ASHA calls/visits and escalates alert to ANM
-  Future<void> ashaEscalateAlert({required String alertId, required String notes}) async {
+  /// Step 3: ASHA calls/visits and escalates the alert to the ANM.
+  Future<void> ashaEscalateAlert({
+    required String alertId,
+    required String notes,
+    String? anmId,
+  }) async {
+    final ashaId = _currentUserIdOr.isNotEmpty ? _currentUserIdOr : demoAshaId;
     await AlertRepository.instance.escalateToAnm(
       alertId: alertId,
-      ashaId: demoAshaId,
-      anmId: demoAnmId,
+      ashaId: ashaId,
+      anmId: anmId ?? demoAnmId,
       notes: notes,
     );
-
-    // If online, call Supabase function
-    if (SupabaseService.instance.isConfigured) {
-      try {
-        final client = SupabaseService.instance.client;
-        await client?.rpc('escalate_alert_to_anm', params: {
-          'p_alert_id': alertId,
-          'p_asha_id': demoAshaId,
-          'p_notes': notes,
-        });
-      } catch (e) {
-        debugPrint('Supabase escalate_alert_to_anm failed: $e');
-      }
-    }
-
     notifyListeners();
-    debugPrint('Closed Loop Step 3: ASHA escalated alert to ANM Sunita.');
   }
 
-  /// Step 4: ANM confirms HRP status, clearing alert and updating supervisor counts
+  /// Step 4: ANM confirms HRP status, closing the alert.
   Future<void> anmConfirmHrp({
     required String alertId,
     required String patientId,
     required String notes,
   }) async {
-    // 1. Confirm patient as High-Risk Pregnancy
-    await PatientRepository.instance.confirmHrp(
-      patientId,
-      'Confirmed by ANM Sunita: $notes',
-    );
+    final anmId = _currentUserIdOr.isNotEmpty ? _currentUserIdOr : demoAnmId;
 
-    // 2. Close alert
+    await PatientRepository.instance.confirmHrp(patientId, notes, confirmedBy: anmId);
+    await AlertRepository.instance.recordEscalationDecision(
+      alertId: alertId,
+      decision: 'confirm_hrp',
+      decidedBy: anmId,
+      notes: notes,
+    );
     await AlertRepository.instance.closeAlert(
       alertId,
-      'Confirmed as High-Risk Pregnancy by ANM Sunita: $notes',
+      'Confirmed as High-Risk Pregnancy by ANM: $notes',
+      closedBy: anmId,
     );
 
-    // 3. If online, call Supabase function
-    if (SupabaseService.instance.isConfigured) {
-      try {
-        final client = SupabaseService.instance.client;
-        await client?.rpc('decide_anm_escalation', params: {
-          'p_alert_id': alertId,
-          'p_anm_id': demoAnmId,
-          'p_decision': 'confirm_hrp',
-          'p_decision_notes': notes,
-        });
-      } catch (e) {
-        debugPrint('Supabase decide_anm_escalation failed: $e');
-      }
-    }
-
     notifyListeners();
-    debugPrint('Closed Loop Step 4 & 5: ANM confirmed HRP -> Supervisor count updated.');
   }
 
-  /// Reset the closed-loop demo scenario back to default state
+  /// Reset the closed-loop demo scenario back to its default state.
   Future<void> resetDemoLoop() async {
-    // Reset patient HRP flag
     final patient = await PatientRepository.instance.getPatientById(demoPatientId);
     if (patient != null) {
-      final resetPatient = PatientModel(
-        id: patient.id,
-        profileId: patient.profileId,
-        name: patient.name,
-        phone: patient.phone,
-        dateOfBirth: patient.dateOfBirth,
-        lmp: patient.lmp,
-        edd: patient.edd,
-        heightCm: patient.heightCm,
-        bloodGroup: patient.bloodGroup,
-        rhNegative: patient.rhNegative,
-        isConfirmedHrp: false,
-        hrpCategory: null,
-        assignedAshaId: patient.assignedAshaId,
-        assignedAnmId: patient.assignedAnmId,
-      );
-      await LocalDb.patientsBox.put(patient.id, resetPatient.toMap());
+      final map = patient.toMap()
+        ..['is_confirmed_hrp'] = false
+        ..['hrp_category'] = null;
+      await LocalDb.patientsBox.put(patient.id, map);
     }
 
-    // Reset default seed alerts
     await LocalDb.alertsBox.clear();
     await AlertRepository.instance.ensureCachePopulated();
 
     notifyListeners();
-    debugPrint('Closed Loop scenario reset to baseline.');
   }
 
   String _formatDate(DateTime d) =>

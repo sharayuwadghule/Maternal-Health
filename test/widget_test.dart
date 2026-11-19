@@ -19,7 +19,7 @@ void main() {
       ),
     );
 
-    expect(find.text('Choose Language'), findsOneWidget);
+    expect(find.text('Choose your language'), findsOneWidget);
     expect(find.text('English'), findsOneWidget);
   });
 }

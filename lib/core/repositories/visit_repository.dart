@@ -1,7 +1,6 @@
-import 'package:flutter/foundation.dart';
 import '../database/local_db.dart';
 import '../models/visit_model.dart';
-import '../network/supabase_service.dart';
+import '../utils/ids.dart';
 
 class VisitRepository {
   VisitRepository._();
@@ -9,7 +8,7 @@ class VisitRepository {
 
   static final List<VisitModel> defaultSeedVisits = [
     VisitModel(
-      id: 'visit-seed-01',
+      id: 'b15e0000-0000-4000-8000-000000000001',
       patientId: '55555555-5555-5555-5555-555555555501',
       recordedBy: '22222222-2222-2222-2222-222222222241',
       recordedByRole: 'asha',
@@ -22,7 +21,7 @@ class VisitRepository {
       recordedAt: DateTime.now().subtract(const Duration(days: 14)),
     ),
     VisitModel(
-      id: 'visit-seed-02',
+      id: 'b15e0000-0000-4000-8000-000000000002',
       patientId: '55555555-5555-5555-5555-555555555502',
       recordedBy: '22222222-2222-2222-2222-222222222231',
       recordedByRole: 'anm',
@@ -35,14 +34,44 @@ class VisitRepository {
       notes: 'Stage 1 gestational hypertension detected. Referred for ANM review.',
       recordedAt: DateTime.now().subtract(const Duration(days: 5)),
     ),
+    VisitModel(
+      id: 'b15e0000-0000-4000-8000-000000000003',
+      patientId: '55555555-5555-5555-5555-555555555503',
+      recordedBy: '22222222-2222-2222-2222-222222222231',
+      recordedByRole: 'anm',
+      visitDate: DateTime.now().subtract(const Duration(days: 3)),
+      systolic: 112,
+      diastolic: 72,
+      hemoglobin: 6.8,
+      weightKg: 47.0,
+      notes: 'Severe anemia on Hb test. Referred to PHC for IV iron.',
+      recordedAt: DateTime.now().subtract(const Duration(days: 3)),
+    ),
+    VisitModel(
+      id: 'b15e0000-0000-4000-8000-000000000004',
+      patientId: '55555555-5555-5555-5555-555555555505',
+      recordedBy: '22222222-2222-2222-2222-222222222243',
+      recordedByRole: 'asha',
+      visitDate: DateTime.now().subtract(const Duration(days: 8)),
+      systolic: 124,
+      diastolic: 80,
+      hemoglobin: 8.8,
+      weightKg: 58.0,
+      notes: 'Moderate anemia. Counselled on iron-rich diet.',
+      recordedAt: DateTime.now().subtract(const Duration(days: 8)),
+    ),
   ];
+
+  static const List<String> _legacyIds = ['visit-seed-01', 'visit-seed-02'];
 
   Future<void> ensureCachePopulated() async {
     final box = LocalDb.visitsBox;
-    if (box.isEmpty) {
-      for (final v in defaultSeedVisits) {
-        await box.put(v.id, v.toMap());
-      }
+    for (final legacy in _legacyIds) {
+      if (box.containsKey(legacy)) await box.delete(legacy);
+    }
+    // Add any missing seed visit (keeps upgrades consistent with fresh installs).
+    for (final v in defaultSeedVisits) {
+      if (!box.containsKey(v.id)) await box.put(v.id, v.toMap());
     }
   }
 
@@ -59,6 +88,18 @@ class VisitRepository {
     return all;
   }
 
+  /// Latest and previous visit with vitals, for risk scoring and trends.
+  Future<({VisitModel? latest, VisitModel? previous})> getLatestVitals(String patientId) async {
+    final visits = await getVisitsForPatient(patientId);
+    final withVitals = visits
+        .where((v) => v.systolic != null || v.hemoglobin != null || v.dangerSigns.isNotEmpty)
+        .toList();
+    return (
+      latest: withVitals.isNotEmpty ? withVitals[0] : null,
+      previous: withVitals.length > 1 ? withVitals[1] : null,
+    );
+  }
+
   /// Record a new visit
   Future<VisitModel> logVisit({
     required String patientId,
@@ -73,7 +114,7 @@ class VisitRepository {
     String? notes,
   }) async {
     final newVisit = VisitModel(
-      id: 'visit-${DateTime.now().millisecondsSinceEpoch}',
+      id: Ids.newId(),
       patientId: patientId,
       recordedBy: recordedBy,
       recordedByRole: recordedByRole,
@@ -90,22 +131,12 @@ class VisitRepository {
     // 1. Write to local Hive cache
     await LocalDb.visitsBox.put(newVisit.id, newVisit.toMap());
 
-    // 2. Queue in outbox
+    // 2. Queue in outbox (the sync service pushes it when online)
     await LocalDb.enqueueSync(
       table: 'visits',
-      action: 'insert',
+      action: 'upsert',
       payload: newVisit.toMap(),
     );
-
-    // 3. Sync to Supabase if connected
-    if (SupabaseService.instance.isConfigured) {
-      try {
-        final client = SupabaseService.instance.client;
-        await client?.from('visits').insert(newVisit.toMap());
-      } catch (e) {
-        debugPrint('Supabase visit insert error: $e');
-      }
-    }
 
     return newVisit;
   }

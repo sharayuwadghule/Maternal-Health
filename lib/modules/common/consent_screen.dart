@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../app_state.dart';
+import '../../app_state.dart';
+import '../../core/theme/app_theme.dart';
 
 class ConsentScreen extends StatefulWidget {
   const ConsentScreen({super.key});
@@ -16,123 +17,137 @@ class _ConsentScreenState extends State<ConsentScreen> {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
+    final theme = Theme.of(context);
+    final canContinue = _agreedToTerms && _agreedToDataSharing;
+
+    final points = [
+      (
+        Icons.lock_rounded,
+        state.translate('Stored securely', 'सुरक्षित रूप से संग्रहित', 'सुरक्षितपणे साठवलेले'),
+        state.translate('Your records are protected under ABDM / DISHA guidelines.', 'आपके रिकॉर्ड ABDM / DISHA दिशानिर्देशों के तहत सुरक्षित हैं।', 'तुमच्या नोंदी ABDM / DISHA मार्गदर्शक तत्त्वांनुसार सुरक्षित आहेत.'),
+      ),
+      (
+        Icons.groups_rounded,
+        state.translate('Shared only with your care team', 'केवल आपकी देखभाल टीम के साथ', 'फक्त तुमच्या काळजी टीमसोबत'),
+        state.translate('Your ASHA, ANM and PHC doctor – nobody else.', 'आपकी आशा, एएनएम और PHC डॉक्टर – और कोई नहीं।', 'तुमची आशा, एएनएम आणि PHC डॉक्टर – इतर कोणीही नाही.'),
+      ),
+      (
+        Icons.notifications_active_rounded,
+        state.translate('Used to keep you safe', 'आपकी सुरक्षा के लिए', 'तुमच्या सुरक्षिततेसाठी'),
+        state.translate('Danger signs and missed medicines alert your ASHA early.', 'खतरे के लक्षण और छूटी दवाएं आपकी आशा को जल्दी सूचित करती हैं।', 'धोक्याची लक्षणे आणि चुकलेली औषधे तुमच्या आशाला लवकर कळवली जातात.'),
+      ),
+    ];
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => Navigator.pushReplacementNamed(context, '/language'),
         ),
+        title: Text(state.translate('Privacy & consent', 'गोपनीयता और सहमति', 'गोपनीयता आणि संमती')),
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 20),
-              Center(
-                child: Icon(
-                  Icons.shield_outlined,
-                  size: 100,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                state.translate('Data Privacy & Consent', 'डेटा गोपनीयता और सहमति', 'डेटा गोपनीयता आणि संमती'),
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 24),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                state.translate(
-                  'Your health data is protected under the ABDM/DISHA guidelines. We need your consent to securely store and share this data with your designated ASHA worker and PHC supervisor to provide better care.',
-                  'आपका स्वास्थ्य डेटा ABDM/DISHA दिशानिर्देशों के तहत सुरक्षित है। बेहतर देखभाल प्रदान करने के लिए हमें आपके निर्दिष्ट आशा कार्यकर्ता और PHC पर्यवेक्षक के साथ इस डेटा को सुरक्षित रूप से संग्रहीत और साझा करने के लिए आपकी सहमति की आवश्यकता है।',
-                  'तुमचा आरोग्य डेटा ABDM/DISHA मार्गदर्शक तत्त्वांनुसार सुरक्षित आहे. उत्तम काळजी प्रदान करण्यासाठी आम्हाला तुमचा डेटा तुमच्या नियुक्त आशा कार्यकर्त्या आणि PHC पर्यवेक्षकासोबत सुरक्षितपणे संग्रहित आणि शेअर करण्यासाठी तुमच्या संमतीची आवश्यकता आहे.'
-                ),
-                style: const TextStyle(fontSize: 16, color: Colors.black87, height: 1.5),
-              ),
-              const SizedBox(height: 32),
-              
-              // Checkbox 1
-              _buildCheckboxTile(
-                value: _agreedToTerms,
-                onChanged: (val) => setState(() => _agreedToTerms = val ?? false),
-                text: state.translate(
-                  'I agree to the Terms of Service and Privacy Policy.',
-                  'मैं सेवा की शर्तों और गोपनीयता नीति से सहमत हूँ।',
-                  'मी सेवा अटी आणि गोपनीयता धोरणाशी सहमत आहे.'
-                ),
-              ),
-              
-              const SizedBox(height: 16),
-              
-              // Checkbox 2
-              _buildCheckboxTile(
-                value: _agreedToDataSharing,
-                onChanged: (val) => setState(() => _agreedToDataSharing = val ?? false),
-                text: state.translate(
-                  'I consent to share my health records with my ASHA worker and local health clinic.',
-                  'मैं अपने स्वास्थ्य रिकॉर्ड को अपनी आशा कार्यकर्ता और स्थानीय स्वास्थ्य क्लिनिक के साथ साझा करने की सहमति देता हूँ।',
-                  'मी माझे आरोग्य रेकॉर्ड माझ्या आशा कार्यकर्त्या आणि स्थानिक आरोग्य क्लिनिकसोबत शेअर करण्यास संमती देतो.'
-                ),
-              ),
-              
-              const Spacer(),
-              ElevatedButton(
-                onPressed: (_agreedToTerms && _agreedToDataSharing)
-                    ? () {
-                        // Store consent logic would go here
-                        Navigator.pushReplacementNamed(context, '/selection');
-                      }
-                    : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: (_agreedToTerms && _agreedToDataSharing)
-                      ? Theme.of(context).colorScheme.primary
-                      : Colors.grey.shade400,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 56),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+      body: ListView(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        children: [
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.lg - 4),
+            decoration: BoxDecoration(
+              color: AppColors.primaryContainer.withValues(alpha: 0.6),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.verified_user_rounded, color: AppColors.primary, size: 40),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Text(
+                    state.translate('Your health data stays private', 'आपका स्वास्थ्य डेटा निजी रहता है', 'तुमचा आरोग्य डेटा खाजगी राहतो'),
+                    style: theme.textTheme.titleLarge,
                   ),
                 ),
-                child: Text(
-                  state.translate('I Accept', 'मैं स्वीकार करता हूँ', 'मी स्वीकारतो'),
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Card(
+            child: Column(
+              children: [
+                for (var i = 0; i < points.length; i++) ...[
+                  ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 4),
+                    leading: CircleAvatar(
+                      backgroundColor: AppColors.muted,
+                      child: Icon(points[i].$1, color: AppColors.primary, size: 20),
+                    ),
+                    title: Text(points[i].$2, style: theme.textTheme.titleSmall),
+                    subtitle: Text(points[i].$3, style: theme.textTheme.bodySmall),
+                  ),
+                  if (i < points.length - 1) const Divider(indent: 72),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          _ConsentCheck(
+            value: _agreedToTerms,
+            onChanged: (v) => setState(() => _agreedToTerms = v),
+            text: state.translate(
+              'I agree to the Terms of Service and Privacy Policy.',
+              'मैं सेवा की शर्तों और गोपनीयता नीति से सहमत हूँ।',
+              'मी सेवा अटी आणि गोपनीयता धोरणाशी सहमत आहे.',
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          _ConsentCheck(
+            value: _agreedToDataSharing,
+            onChanged: (v) => setState(() => _agreedToDataSharing = v),
+            text: state.translate(
+              'I consent to share my health records with my ASHA worker and local health centre.',
+              'मैं अपने स्वास्थ्य रिकॉर्ड अपनी आशा कार्यकर्ता और स्थानीय स्वास्थ्य केंद्र के साथ साझा करने की सहमति देती हूँ।',
+              'मी माझे आरोग्य रेकॉर्ड माझ्या आशा कार्यकर्तीसोबत आणि स्थानिक आरोग्य केंद्रासोबत शेअर करण्यास संमती देते.',
+            ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.md),
+          child: ElevatedButton(
+            onPressed: canContinue
+                ? () {
+                    state.acceptConsent();
+                    Navigator.pushReplacementNamed(context, '/selection');
+                  }
+                : null,
+            child: Text(state.translate('Agree and continue', 'सहमत हूँ और आगे बढ़ें', 'सहमत आहे, पुढे जा')),
           ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildCheckboxTile({required bool value, required ValueChanged<bool?> onChanged, required String text}) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          height: 24,
-          width: 24,
-          child: Checkbox(
-            value: value,
-            onChanged: onChanged,
-            activeColor: Theme.of(context).colorScheme.primary,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            text,
-            style: const TextStyle(fontSize: 15, color: Colors.black87),
-          ),
-        ),
-      ],
+class _ConsentCheck extends StatelessWidget {
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  final String text;
+  const _ConsentCheck({required this.value, required this.onChanged, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        side: BorderSide(color: value ? AppColors.primary : AppColors.border),
+      ),
+      child: CheckboxListTile(
+        value: value,
+        onChanged: (v) => onChanged(v ?? false),
+        controlAffinity: ListTileControlAffinity.leading,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
+        title: Text(text, style: const TextStyle(fontSize: 14, color: AppColors.textPrimary)),
+      ),
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import '../../../app_state.dart';
 import '../../../core/repositories/visit_repository.dart';
@@ -17,9 +18,6 @@ class LogVisitBottomSheet extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
       builder: (context) => LogVisitBottomSheet(
         patientId: patientId,
         patientName: patientName,
@@ -47,7 +45,7 @@ class LogVisitBottomSheet extends StatelessWidget {
             children: [
               Text(
                 state.translate('Log Home Visit', 'गृह भेंट दर्ज करें', 'घर भेट नोंदवा'),
-                style: const TextStyle(fontSize: 18, color: Colors.grey),
+                style: const TextStyle(fontSize: 18, color: AppColors.textSecondary),
               ),
               IconButton(
                 icon: const Icon(Icons.close),
@@ -63,8 +61,8 @@ class LogVisitBottomSheet extends StatelessWidget {
           
           ListTile(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            tileColor: Colors.green.shade50,
-            leading: const Icon(Icons.check_circle, color: Colors.green, size: 28),
+            tileColor: AppColors.successContainer,
+            leading: const Icon(Icons.check_circle, color: AppColors.success, size: 28),
             title: Text(state.translate('Routine ANC Visit', 'नियमित प्रसवपूर्व जांच', 'नियमित तपासणी भेट'), style: const TextStyle(fontWeight: FontWeight.bold)),
             subtitle: Text(state.translate('Diet advice, medicine supply checked', 'आहार सलाह, दवा आपूर्ति की जांच', 'आहार सल्ला, औषध पुरवठा तपासला')),
             onTap: () => _logAndClose(context, 'Routine ANC checkup conducted by ASHA. Mother counselled on nutrition.'),
@@ -72,8 +70,8 @@ class LogVisitBottomSheet extends StatelessWidget {
           const SizedBox(height: 12),
           ListTile(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            tileColor: Colors.orange.shade50,
-            leading: const Icon(Icons.medication, color: Colors.orange, size: 28),
+            tileColor: AppColors.warningContainer,
+            leading: const Icon(Icons.medication, color: AppColors.warning, size: 28),
             title: Text(state.translate('Follow-up (Missed Meds)', 'फॉलो-अप (दवा छूटी)', 'फॉलो-अप (औषध चुकले)'), style: const TextStyle(fontWeight: FontWeight.bold)),
             subtitle: Text(state.translate('Encouraged patient to resume Iron/Calcium daily', 'रोगी को दैनिक आयरन/कैल्शियम लेने के लिए प्रेरित किया', 'रुग्णाला दररोज आयर्न/कॅल्शियम घेण्यास प्रोत्साहित केले')),
             onTap: () => _logAndClose(context, 'Medicine adherence follow-up visit. Reminded mother on benefits of daily Iron & Calcium.'),
@@ -81,8 +79,8 @@ class LogVisitBottomSheet extends StatelessWidget {
           const SizedBox(height: 12),
           ListTile(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            tileColor: Colors.red.shade50,
-            leading: const Icon(Icons.emergency, color: Colors.red, size: 28),
+            tileColor: AppColors.dangerContainer,
+            leading: const Icon(Icons.emergency, color: AppColors.danger, size: 28),
             title: Text(state.translate('Emergency/HRP Visit', 'आपातकालीन/HRP विजिट', 'तातडीची भेट (HRP)'), style: const TextStyle(fontWeight: FontWeight.bold)),
             subtitle: Text(state.translate('High risk detected, escalation to ANM required', 'उच्च जोखिम की पहचान, एएनएम को रेफरल आवश्यक', 'उच्च धोका आढळला, एएनएमकडे पाठवणे आवश्यक')),
             onTap: () => _logAndClose(context, 'Urgent high-risk checkup. Clinical review initiated.'),
@@ -97,8 +95,8 @@ class LogVisitBottomSheet extends StatelessWidget {
     final state = AppState.instance;
     await VisitRepository.instance.logVisit(
       patientId: patientId,
-      recordedBy: 'asha-savita',
-      recordedByRole: 'asha',
+      recordedBy: state.currentUser?.id ?? '',
+      recordedByRole: state.currentRole.name,
       visitDate: DateTime.now(),
       notes: notes,
     );
@@ -112,7 +110,7 @@ class LogVisitBottomSheet extends StatelessWidget {
             'विजिट सफलतापूर्वक दर्ज की गई (ऑफ़लाइन सिंक कतारबद्ध)',
             'भेट यशस्वीरित्या नोंदवली गेली (ऑफलाइन सिंक रांगेत)',
           )),
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.success,
           duration: const Duration(seconds: 3),
         ),
       );

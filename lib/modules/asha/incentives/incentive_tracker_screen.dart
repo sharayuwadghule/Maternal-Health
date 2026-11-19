@@ -1,137 +1,102 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../app_state.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/ui_kit.dart';
 
+/// ASHA incentives (JSY / PMSMA). Figures are demo values until the
+/// backend reports claim status.
 class IncentiveTrackerScreen extends StatelessWidget {
   const IncentiveTrackerScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
+    final theme = Theme.of(context);
+
+    final schemes = [
+      (state.translate('ANC checkups', 'एएनसी जांच', 'एएनसी तपासणी'), 12, 15, AppColors.success, AppColors.mint, Icons.fact_check_rounded),
+      (state.translate('High-risk follow-ups', 'उच्च जोखिम फॉलो-अप', 'उच्च धोका फॉलो-अप'), 4, 5, AppColors.accent, AppColors.peach, Icons.shield_rounded),
+      (state.translate('Institutional deliveries', 'संस्थागत प्रसव', 'संस्थात्मक प्रसूती'), 2, 2, AppColors.info, AppColors.sky, Icons.local_hospital_rounded),
+    ];
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(state.translate('Incentive Tracker', 'प्रोत्साहन ट्रैकर', 'प्रोत्साहन ट्रॅकर')),
-        backgroundColor: const Color(0xFFAEC6CF),
-      ),
+      appBar: AppBar(title: Text(state.translate('Incentives', 'प्रोत्साहन', 'प्रोत्साहन'))),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(AppSpacing.lg - 4, AppSpacing.sm, AppSpacing.lg - 4, AppSpacing.lg),
         children: [
-          _buildImpactCard(context, state),
-          const SizedBox(height: 24),
-          Text(
-            state.translate('Scheme Eligibility (JSY / PMSMA)', 'योजना पात्रता', 'योजना पात्रता'),
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          _buildSchemeProgress(
-            context,
-            state.translate('ANC Checkups', 'एएनसी जांच', 'एएनसी तपासणी'),
-            '12 / 15',
-            0.8,
-            Colors.green,
-          ),
-          _buildSchemeProgress(
-            context,
-            state.translate('HRP Follow-ups', 'हाई रिस्क फॉलो-अप', 'हाय रिस्क फॉलो-अप'),
-            '4 / 5',
-            0.8,
-            Colors.orange,
-          ),
-          _buildSchemeProgress(
-            context,
-            state.translate('Institutional Deliveries', 'संस्थागत प्रसव', 'संस्थात्मक प्रसूती'),
-            '2 / 2',
-            1.0,
-            Colors.blue,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildImpactCard(BuildContext context, AppState state) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [const Color(0xFFAEC6CF), const Color(0xFFAEC6CF).withValues(alpha: 0.7)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFAEC6CF).withValues(alpha: 0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            state.translate('Your Impact This Month', 'इस महीने आपका प्रभाव', 'या महिन्यात तुमचा प्रभाव'),
-            style: const TextStyle(
-              fontSize: 18,
-              color: Colors.black87,
-              fontWeight: FontWeight.w600,
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.lg - 4),
+            decoration: BoxDecoration(color: AppColors.butter, borderRadius: BorderRadius.circular(AppRadius.lg)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(state.translate('This month', 'इस महीने', 'या महिन्यात'), style: const TextStyle(fontSize: 13, color: AppColors.cocoa, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 4),
+                const Text('₹450', style: TextStyle(fontSize: 34, fontWeight: FontWeight.w800, color: AppColors.textPrimary, height: 1.1)),
+                Text(state.translate('Estimated incentive', 'अनुमानित प्रोत्साहन', 'अंदाजित प्रोत्साहन'), style: const TextStyle(fontSize: 13, color: AppColors.cocoa)),
+                const SizedBox(height: AppSpacing.md),
+                Row(
+                  children: [
+                    _stat('15', state.translate('Visits', 'विजिट', 'भेटी')),
+                    _stat('3', state.translate('HRP found', 'HRP मिले', 'HRP आढळले')),
+                    _stat('2', state.translate('Deliveries', 'प्रसव', 'प्रसूती')),
+                  ],
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildStat(context, '15', state.translate('Visits', 'विजिट', 'भेटी')),
-              _buildStat(context, '3', state.translate('HRP Found', 'हाई रिस्क', 'हाय रिस्क')),
-              _buildStat(context, '₹450', state.translate('Est. Bonus', 'अनुमानित बोनस', 'अंदाजित बोनस')),
-            ],
-          ),
+          const SizedBox(height: AppSpacing.lg),
+          SectionTitle(state.translate('Scheme progress', 'योजना प्रगति', 'योजना प्रगती')),
+          for (final s in schemes) ...[
+            SoftCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(color: s.$5, borderRadius: BorderRadius.circular(AppRadius.sm)),
+                        child: Icon(s.$6, color: s.$4, size: 22),
+                      ),
+                      const SizedBox(width: AppSpacing.sm + 4),
+                      Expanded(child: Text(s.$1, style: theme.textTheme.titleMedium)),
+                      Text('${s.$2} / ${s.$3}', style: TextStyle(fontWeight: FontWeight.w700, color: s.$4)),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.sm + 4),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                    child: LinearProgressIndicator(
+                      value: s.$2 / s.$3,
+                      minHeight: 8,
+                      backgroundColor: AppColors.muted,
+                      color: s.$4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm + 4),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildStat(BuildContext context, String value, String label) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87),
-        ),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 14, color: Colors.black54),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSchemeProgress(BuildContext context, String title, String progressText, double progress, Color color) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+  Widget _stat(String value, String label) {
+    return Expanded(
+      child: Container(
+        margin: const EdgeInsets.only(right: AppSpacing.sm),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.6), borderRadius: BorderRadius.circular(AppRadius.sm)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                Text(progressText, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
-              ],
-            ),
-            const SizedBox(height: 12),
-            LinearProgressIndicator(
-              value: progress,
-              backgroundColor: color.withValues(alpha: 0.1),
-              valueColor: AlwaysStoppedAnimation<Color>(color),
-              minHeight: 8,
-              borderRadius: BorderRadius.circular(4),
-            ),
+            Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+            Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, color: AppColors.cocoa)),
           ],
         ),
       ),

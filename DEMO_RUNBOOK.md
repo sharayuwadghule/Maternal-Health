@@ -28,10 +28,10 @@ The live demonstration follows **Priyanka More (24 years old, Primigravida, 26 w
 ## 2. Step-by-Step Live Presentation Guide
 
 ### 📱 Step 1: Patient Screen (Marathi / Local Language)
-1. Select **Patient** role (or login as Priyanka More).
+1. Select **Pregnant mother**, enter any valid mobile number (e.g. `9811111101`) and type the 6-digit demo code shown on the OTP screen (demo mode sends no SMS).
 2. Note the clean trilingual UI in **Marathi (मराठी)**.
 3. Show daily medicine checklist: **Iron (लोह)** and **Calcium (कॅल्शियम)**.
-4. Tap **"⚡ Simulate 4 Missed Days (Demo)"** from the top-right `⋮` menu.
+4. Tap **"Demo: simulate 4 missed days"** from the top-right `⋮` menu.
    - *Explaining to Judges*: In rural settings, mothers often experience side effects (nausea/gastric discomfort) and stop taking iron supplements without informing health workers.
 
 ### 📱 Step 2: ASHA Field Management Screen
@@ -100,7 +100,7 @@ Judges frequently ask: *"How will this work in tribal or remote villages with ze
    -- Run supabase/seed_data.sql
    ```
 
-*To reset the demo during the competition, run `supabase/seed_data.sql` again, or tap `Reset Demo Scenario` in the app's patient screen menu.*
+*To reset the demo during the competition, run `supabase/seed_data.sql` again, or tap `Demo: reset scenario` in the app's patient screen menu.*
 
 ---
 
@@ -127,3 +127,10 @@ Judges frequently ask: *"How will this work in tribal or remote villages with ze
   1. Percentage increase in IFA (Iron Folic Acid) adherence (target: > 85%).
   2. Average days from high-risk symptom onset to ANM confirmation (target: < 48 hours).
   3. ANC checkup completion rate on PMSMA days.
+
+---
+
+## Demo mode vs live mode
+
+* **Demo mode** (no `SUPABASE_URL`/`SUPABASE_ANON_KEY` defined, or `--dart-define=DEMO_MODE=true`): a pink **DEMO** ribbon is shown, OTP codes appear on screen, ANM/Supervisor/Caregiver open directly, and the ASHA creates a 4-digit PIN on first use. The simulate/reset menu items and the offline toggle are only visible in this mode.
+* **Live mode** (real Supabase keys): every role signs in with Supabase phone OTP (enable the Phone provider and link each `profiles.auth_user_id`). Health workers then set a device PIN that locks the app on shared phones.

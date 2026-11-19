@@ -1,5 +1,5 @@
 name: maternalhealth_app
-description: "A new Flutter project."
+description: "Janani – offline-first maternal health app for mothers, ASHAs, ANMs and PHC supervisors."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -40,6 +40,8 @@ dependencies:
   shared_preferences: ^2.5.5
   url_launcher: ^6.3.2
   supabase_flutter: ^2.18.2
+  uuid: ^4.6.0
+  crypto: ^3.0.8
 
 dev_dependencies:
   flutter_test:
@@ -62,6 +64,22 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  # Poppins (SIL Open Font License 1.1) – covers Latin + Devanagari so
+  # English, Hindi and Marathi render in one consistent typeface, offline.
+  fonts:
+    - family: Poppins
+      fonts:
+        - asset: assets/fonts/Poppins-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Poppins-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Poppins-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Poppins-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Poppins-ExtraBold.ttf
+          weight: 800
 
   # To add assets to your application, add an assets section, like this:
   # assets:

@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Janani – Poster (A1)</title>
+<style>
+  @font-face { font-family: Poppins; src: url(../../assets/fonts/Poppins-Regular.ttf); font-weight: 400; }
+  @font-face { font-family: Poppins; src: url(../../assets/fonts/Poppins-Medium.ttf); font-weight: 500; }
+  @font-face { font-family: Poppins; src: url(../../assets/fonts/Poppins-SemiBold.ttf); font-weight: 600; }
+  @font-face { font-family: Poppins; src: url(../../assets/fonts/Poppins-Bold.ttf); font-weight: 700; }
+  @font-face { font-family: Poppins; src: url(../../assets/fonts/Poppins-ExtraBold.ttf); font-weight: 800; }
+
+  /* A1 portrait: 594 x 841 mm  ==  1684 x 2384 pt (1 px here = 1 pt in the PDF) */
+  @page { size: 1684px 2384px; margin: 0; }
+  :root {
+    --ink: #2B2440; --text: #1F1B24; --muted: #6F6979; --line: #ECE9F0; --soft: #F6F5F8;
+    --rose: #D9577A; --orange: #F2994A; --cocoa: #6B3A1E;
+    --butter: #FFCD5C; --peach: #FFE1CC; --blush: #F8DCDC; --lavender: #E5DEFB; --mint: #DDF0E2; --sky: #DCEAFB;
+    --danger: #D64545; --success: #2F8F55; --info: #3A6FD8; --violet: #6B4FD8;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #fff; }
+  body { font-family: Poppins, sans-serif; color: var(--text); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .poster { width: 1684px; height: 2384px; padding: 50px 60px 44px; display: flex; flex-direction: column; gap: 18px; overflow: hidden; }
+
+  h2 { margin: 0 0 14px; font-size: 31px; font-weight: 700; display: flex; align-items: center; gap: 14px; letter-spacing: -0.3px; }
+  h2 .num { width: 44px; height: 44px; border-radius: 14px; background: var(--ink); color: #fff; font-size: 20px; display: grid; place-items: center; flex: none; }
+  p { margin: 0; }
+  .card { background: #fff; border: 1.5px solid var(--line); border-radius: 26px; padding: 22px 24px; box-shadow: 0 10px 30px rgba(43,36,64,.06); }
+  .pill { display: inline-flex; align-items: center; gap: 8px; padding: 7px 16px; border-radius: 100px; font-size: 17px; font-weight: 600; }
+  svg.i { width: 26px; height: 26px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+  /* ── Header ─────────────────────────────────────────── */
+  .header { display: flex; align-items: center; gap: 32px; padding-bottom: 22px; border-bottom: 2px solid var(--line); }
+  .hero { margin-left: auto; width: 330px; height: 250px; flex: none; margin-top: -40px; margin-bottom: -40px; }
+  .logo { width: 118px; height: 118px; border-radius: 38px; background: linear-gradient(140deg, var(--rose), #E88AA3); display: grid; place-items: center; flex: none; }
+  .logo svg { width: 74px; height: 74px; }
+  .title h1 { margin: 0; font-size: 108px; line-height: .95; font-weight: 800; letter-spacing: -2px; color: var(--ink); }
+  .title h1 span { color: var(--rose); }
+  .title p { margin-top: 8px; font-size: 29px; font-weight: 500; color: var(--muted); }
+  .title p b { color: var(--text); font-weight: 600; }
+  .meta { display: flex; gap: 10px; margin-top: 14px; }
+  .meta .pill { font-size: 17px; padding: 7px 18px; }
+
+  /* ── Problem ────────────────────────────────────────── */
+  .problem { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; }
+  .issues { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .issue { display: flex; gap: 14px; align-items: flex-start; background: var(--soft); border-radius: 20px; padding: 16px 18px; }
+  .issue .ic { width: 48px; height: 48px; border-radius: 16px; display: grid; place-items: center; flex: none; }
+  .issue h3 { margin: 0 0 4px; font-size: 21px; font-weight: 700; }
+  .issue p { font-size: 16.5px; line-height: 1.45; color: var(--muted); }
+  .stats { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; margin-top: 12px; }
+  .stat { border-radius: 20px; padding: 14px 18px; }
+  .stat b { display: block; font-size: 36px; font-weight: 800; line-height: 1.05; letter-spacing: -1px; }
+  .stat span { font-size: 15.5px; line-height: 1.35; display: block; margin-top: 6px; }
+  .chart h3 { margin: 0 0 4px; font-size: 24px; font-weight: 700; }
+  .chart > p { font-size: 17px; color: var(--muted); margin-bottom: 18px; }
+  .bar { display: grid; grid-template-columns: 180px 1fr 70px; align-items: center; gap: 14px; margin-bottom: 18px; font-size: 17px; }
+  .bar .track { height: 30px; background: var(--soft); border-radius: 100px; overflow: hidden; }
+  .bar .fill { height: 100%; border-radius: 100px; background: var(--ink); }
+  .bar b { font-size: 20px; text-align: right; }
+  .drop { margin-top: 8px; display: flex; gap: 14px; align-items: center; background: var(--blush); border-radius: 18px; padding: 14px 18px; font-size: 18px; font-weight: 600; color: #8A2626; }
+  .drop b { font-size: 34px; font-weight: 800; color: var(--danger); }
+
+  /* ── Closed loop ────────────────────────────────────── */
+  .loop { background: var(--ink); color: #fff; border-radius: 30px; padding: 26px 36px 24px; }
+  .loop h2 { color: #fff; margin-bottom: 4px; }
+  .loop .sub { font-size: 18px; color: rgba(255,255,255,.72); margin: 0 0 14px 58px; }
+  .loop h2 .num { background: var(--butter); color: var(--ink); }
+  .steps { display: grid; grid-template-columns: repeat(6, minmax(0,1fr)); gap: 0; position: relative; margin-top: 8px; }
+  .steps::before { content: ""; position: absolute; left: 8%; right: 8%; top: 39px; height: 3px; background: repeating-linear-gradient(90deg, rgba(255,255,255,.45) 0 12px, transparent 12px 22px); }
+  .step { text-align: center; position: relative; padding: 0 10px; }
+  .step .dot { width: 78px; height: 78px; margin: 0 auto 12px; border-radius: 50%; display: grid; place-items: center; color: var(--ink); position: relative; }
+  .step .dot svg.i { width: 38px; height: 38px; }
+  .step .n { position: absolute; top: -6px; right: -6px; width: 32px; height: 32px; border-radius: 50%; background: #fff; color: var(--ink); font-size: 15px; font-weight: 800; display: grid; place-items: center; border: 3px solid var(--ink); }
+  .step h4 { margin: 0 0 4px; font-size: 20px; font-weight: 700; }
+  .step p { font-size: 15.5px; line-height: 1.4; color: rgba(255,255,255,.72); }
+  .loop-foot { margin-top: 18px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .loop-foot .pill { background: rgba(255,255,255,.1); color: #fff; font-weight: 500; }
+  .loop-foot .pill.next { background: transparent; border: 1.5px dashed rgba(255,255,255,.45); }
+
+  /* ── Prototype ──────────────────────────────────────── */
+  .proto-row { display: grid; grid-template-columns: 2.35fr 1fr; gap: 24px; align-items: stretch; }
+  .proto { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 20px; align-items: end; }
+  .phone { text-align: center; }
+  .phone .frame { width: 178px; margin: 0 auto; border-radius: 40px; padding: 9px; background: var(--ink); box-shadow: 0 20px 40px rgba(43,36,64,.18); }
+  .phone img { display: block; width: 100%; border-radius: 32px; }
+  .phone h4 { margin: 12px 0 2px; font-size: 19px; font-weight: 700; }
+  .phone p { font-size: 15px; color: var(--muted); }
+
+  /* ── Features / architecture / users ────────────────── */
+  .three { display: grid; grid-template-columns: 0.95fr 1fr 1.2fr; gap: 22px; }
+  .feat { display: flex; gap: 14px; align-items: flex-start; padding: 10px 0; border-bottom: 1.5px dashed var(--line); }
+  .feat:last-child { border-bottom: 0; }
+  .feat .ic { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; flex: none; }
+  .feat h4 { margin: 0; font-size: 18.5px; font-weight: 700; }
+  .feat p { font-size: 15px; line-height: 1.4; color: var(--muted); }
+  .arch { display: flex; flex-direction: column; gap: 12px; }
+  .layer { border-radius: 18px; padding: 13px 16px; display: grid; grid-template-columns: 44px 1fr; gap: 14px; align-items: center; }
+  .layer .ic { width: 44px; height: 44px; border-radius: 13px; background: #fff; display: grid; place-items: center; }
+  .layer h4 { margin: 0; font-size: 18.5px; font-weight: 700; }
+  .layer p { font-size: 14.5px; line-height: 1.4; color: var(--text); opacity: .78; }
+  .phase { margin-top: 4px; text-align: center; font-size: 14.5px; font-weight: 600; color: var(--muted); border: 1.5px dashed #CFC9D6; border-radius: 100px; padding: 7px 10px; }
+  .arrow { text-align: center; color: var(--muted); font-size: 20px; line-height: 0.6; }
+  .ladder { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 2px; }
+  .ladder span { flex: 1; text-align: center; background: #fff; border-radius: 100px; padding: 7px 4px; font-size: 14px; font-weight: 600; }
+  .ladder i { font-style: normal; color: var(--muted); }
+  .user { display: flex; gap: 14px; align-items: center; padding: 14px 0; border-bottom: 1.5px dashed var(--line); }
+  .user:last-child { border-bottom: 0; }
+  .avatar.portrait { width: 64px; height: 64px; overflow: hidden; padding: 0; }
+  .avatar.portrait svg { width: 100%; height: 100%; display: block; }
+  .avatar { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 17px; flex: none; }
+  .user h4 { margin: 0; font-size: 18px; font-weight: 700; }
+  .user p { font-size: 14.5px; color: var(--muted); line-height: 1.35; }
+  .tag { font-size: 12.5px; font-weight: 700; padding: 3px 10px; border-radius: 100px; margin-left: 6px; vertical-align: 2px; }
+
+  /* ── Comparison + impact ────────────────────────────── */
+  .bottom { display: grid; grid-template-columns: 1.55fr 1fr; gap: 24px; }
+  table { width: 100%; border-collapse: collapse; font-size: 16px; white-space: nowrap; }
+  th { font-size: 15px; font-weight: 700; color: var(--muted); padding: 0 6px 10px; text-align: center; }
+  th:first-child { text-align: left; padding-left: 0; }
+  th.j { color: var(--rose); }
+  td { padding: 13px 6px; border-top: 1.5px solid var(--line); text-align: center; }
+  td:first-child { text-align: left; padding-left: 0; font-weight: 500; }
+  td.jc { background: #FFF5F7; }
+  .mk { display: inline-block; width: 24px; height: 24px; border-radius: 50%; border: 2.5px solid #C9C3CF; vertical-align: middle; }
+  .mk.full { background: var(--ink); border-color: var(--ink); }
+  .mk.j { background: var(--rose); border-color: var(--rose); }
+  .mk.half { background: linear-gradient(90deg, var(--ink) 50%, transparent 50%); border-color: var(--ink); }
+  .note { font-size: 13.5px; color: var(--muted); margin-top: 10px; }
+  .impact { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; }
+  .imp { border-radius: 20px; padding: 16px 18px; }
+  .imp svg.i { width: 32px; height: 32px; }
+  .imp h4 { margin: 8px 0 4px; font-size: 18.5px; font-weight: 700; }
+  .imp p { font-size: 15.5px; line-height: 1.4; opacity: .8; }
+  .strip { padding: 18px 22px; display: grid; grid-template-columns: 170px 1fr; gap: 18px; align-items: center; }
+  .strip h2 { flex-direction: column; align-items: flex-start; margin: 0; font-size: 27px; line-height: 1.15; gap: 10px; }
+  .tiles { display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); gap: 12px; }
+  .tiles .imp { padding: 14px 16px; }
+  .tiles .imp p { font-size: 14.5px; line-height: 1.35; }
+  .tiles .imp h4 { white-space: nowrap; font-size: 17px; margin: 6px 0 2px; }
+  .tiles .imp svg.i { width: 26px; height: 26px; }
+  .imp.feasible { background: var(--soft); color: var(--text); }
+  .imp.feasible svg.i { color: var(--ink); }
+  .feas { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  .feas div { background: var(--soft); border-radius: 16px; padding: 12px 16px; display: flex; gap: 12px; align-items: baseline; }
+  .feas h4 { white-space: nowrap; }
+  .feas h4 { margin: 0 0 2px; font-size: 17px; font-weight: 700; }
+  .feas p { font-size: 14px; color: var(--muted); line-height: 1.35; }
+
+  /* ── Footer ─────────────────────────────────────────── */
+  .footer { margin-top: auto; display: flex; align-items: center; gap: 24px; background: var(--peach); border-radius: 24px; padding: 18px 28px; }
+  .footer .q { font-size: 21px; font-weight: 600; color: var(--cocoa); line-height: 1.35; flex: 1; }
+  .footer .team { font-size: 17px; color: var(--cocoa); text-align: right; line-height: 1.5; }
+</style>
+</head>
+<body>
+<!-- Icon sprite (stroke icons) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="heart" viewBox="0 0 24 24"><path d="M12 20s-7-4.35-9.5-8.5C.9 8.6 2.6 5 6 5c2 0 3.2 1.1 4 2.3L12 9l2-1.7C14.8 6.1 16 5 18 5c3.4 0 5.1 3.6 3.5 6.5C19 15.65 12 20 12 20z"/></symbol>
+    <symbol id="pill" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="8" rx="4" transform="rotate(-35 12 12)"/><path d="M9.5 8.5l5 7"/></symbol>
+    <symbol id="chart" viewBox="0 0 24 24"><path d="M4 19h16"/><path d="M7 15l4-4 3 3 5-6"/><path d="M15 8h4v4"/></symbol>
+    <symbol id="bell" viewBox="0 0 24 24"><path d="M6 9a6 6 0 1112 0c0 6 2 7 2 7H4s2-1 2-7"/><path d="M10 20a2 2 0 004 0"/></symbol>
+    <symbol id="phone" viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2"/></symbol>
+    <symbol id="shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></symbol>
+    <symbol id="hosp" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M12 8v8M8 12h8"/></symbol>
+    <symbol id="cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+    <symbol id="clip" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 10h6M9 14h6M9 18h3"/></symbol>
+    <symbol id="clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="wifi" viewBox="0 0 24 24"><path d="M3 3l18 18"/><path d="M8.5 16.5a5 5 0 017 0M5 13a10 10 0 015.2-2.8M12 20h0"/><path d="M16.6 10.6A10 10 0 0119 13"/></symbol>
+    <symbol id="lang" viewBox="0 0 24 24"><path d="M4 5h9M8.5 3v2M6 5c0 4 3 7 6 8M11 5c0 4-3 8-7 9"/><path d="M13 21l4-9 4 9M14.5 18h5"/></symbol>
+    <symbol id="sos" viewBox="0 0 24 24"><path d="M12 3v3M4.2 6.2l2.1 2.1M3 13h3M18 13h3M17.7 8.3l2.1-2.1"/><path d="M7 19v-4a5 5 0 0110 0v4"/><path d="M5 19h14"/></symbol>
+    <symbol id="food" viewBox="0 0 24 24"><path d="M7 3v8M5 3v5a2 2 0 004 0V3M7 11v10"/><path d="M17 3c-2 2-3 4-3 7h3v11"/></symbol>
+    <symbol id="users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0113 0"/><path d="M16 4.5a3.5 3.5 0 010 7M18 14a6 6 0 013.5 6"/></symbol>
+    <symbol id="db" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></symbol>
+    <symbol id="cpu" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/></symbol>
+    <symbol id="mobile" viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></symbol>
+    <symbol id="home" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></symbol>
+    <symbol id="trend" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></symbol>
+    <symbol id="p-mother" viewBox="0 0 100 100"><circle cx="66" cy="27" r="9.5" fill="#2B1D1A"/><path d="M12 104 C12 78 29 67 50 67 C71 67 88 78 88 104Z" fill="#E88AA3"/><path d="M27 72 L74 104 L60 104 L20 79Z" fill="#C2416A"/><path d="M40 70 Q50 80 60 70" stroke="#F2C14E" stroke-width="2" fill="none"/><rect x="43" y="56" width="14" height="16" rx="6" fill="#A86F4C"/><ellipse cx="50" cy="44" rx="19" ry="21" fill="#A86F4C"/><circle cx="43" cy="45" r="1.9" fill="#2B1D1A"/><circle cx="57" cy="45" r="1.9" fill="#2B1D1A"/><path d="M45 53 Q50 57 55 53" stroke="#5A2E1A" stroke-width="1.8" fill="none" stroke-linecap="round"/><circle cx="50" cy="36" r="1.8" fill="#D64545"/><circle cx="31" cy="50" r="2.2" fill="#F2C14E"/><circle cx="69" cy="50" r="2.2" fill="#F2C14E"/><path d="M31 45 C29 22 40 18 50 18 C61 18 72 23 69 46 C66 32 59 28 50 28 C41 28 34 32 31 45Z" fill="#2B1D1A"/></symbol>
+    <symbol id="p-asha" viewBox="0 0 100 100"><circle cx="66" cy="27" r="9.5" fill="#2B1D1A"/><path d="M12 104 C12 78 29 67 50 67 C71 67 88 78 88 104Z" fill="#8DBCEB"/><path d="M27 72 L74 104 L60 104 L20 79Z" fill="#2F5FA8"/><rect x="62" y="80" width="12" height="18" rx="2.5" fill="#2B2440" transform="rotate(-12 68 89)"/><rect x="43" y="56" width="14" height="16" rx="6" fill="#B97A57"/><ellipse cx="50" cy="44" rx="19" ry="21" fill="#B97A57"/><circle cx="43" cy="45" r="1.9" fill="#2B1D1A"/><circle cx="57" cy="45" r="1.9" fill="#2B1D1A"/><path d="M45 53 Q50 57 55 53" stroke="#5A2E1A" stroke-width="1.8" fill="none" stroke-linecap="round"/><circle cx="50" cy="36" r="1.8" fill="#D64545"/><circle cx="31" cy="50" r="2.2" fill="#F2C14E"/><circle cx="69" cy="50" r="2.2" fill="#F2C14E"/><path d="M31 45 C29 22 40 18 50 18 C61 18 72 23 69 46 C66 32 59 28 50 28 C41 28 34 32 31 45Z" fill="#2B1D1A"/></symbol>
+    <symbol id="p-anm" viewBox="0 0 100 100"><circle cx="66" cy="27" r="9.5" fill="#2B1D1A"/><path d="M12 104 C12 78 29 67 50 67 C71 67 88 78 88 104Z" fill="#E9F3F7"/><path d="M38 67 L50 80 L62 67" fill="none" stroke="#3A6FD8" stroke-width="3"/><circle cx="62" cy="86" r="3" fill="#D64545"/><rect x="43" y="56" width="14" height="16" rx="6" fill="#C68863"/><ellipse cx="50" cy="44" rx="19" ry="21" fill="#C68863"/><circle cx="43" cy="45" r="1.9" fill="#2B1D1A"/><circle cx="57" cy="45" r="1.9" fill="#2B1D1A"/><path d="M45 53 Q50 57 55 53" stroke="#5A2E1A" stroke-width="1.8" fill="none" stroke-linecap="round"/><circle cx="50" cy="36" r="1.8" fill="#D64545"/><circle cx="31" cy="50" r="2.2" fill="#F2C14E"/><circle cx="69" cy="50" r="2.2" fill="#F2C14E"/><path d="M31 45 C29 22 40 18 50 18 C61 18 72 23 69 46 C66 32 59 28 50 28 C41 28 34 32 31 45Z" fill="#2B1D1A"/><path d="M36 22 L64 22 L60 13 L40 13Z" fill="#fff" stroke="#DCE6EE" stroke-width="1"/><path d="M50 15v5M47.5 17.5h5" stroke="#D64545" stroke-width="1.6"/></symbol>
+    <symbol id="p-doctor" viewBox="0 0 100 100"><path d="M12 104 C12 78 29 67 50 67 C71 67 88 78 88 104Z" fill="#FFFFFF"/><path d="M41 67 L50 84 L59 67Z" fill="#6FA8DC"/><path d="M50 67 L44 104 M50 67 L56 104" stroke="#E3E6EC" stroke-width="2"/><path d="M37 72 C35 94 63 94 61 72" stroke="#2B2440" stroke-width="2.4" fill="none"/><circle cx="49" cy="93" r="3.2" fill="#2B2440"/><rect x="43" y="56" width="14" height="16" rx="6" fill="#9A6444"/><ellipse cx="50" cy="44" rx="19" ry="21" fill="#9A6444"/><circle cx="43" cy="45" r="1.9" fill="#2B1D1A"/><circle cx="57" cy="45" r="1.9" fill="#2B1D1A"/><path d="M45 53 Q50 57 55 53" stroke="#5A2E1A" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="M31 42 C30 22 40 17 50 17 C61 17 71 22 69 42 C66 30 59 27 50 27 C41 27 34 30 31 42Z" fill="#2B1D1A"/></symbol>
+    <symbol id="p-family" viewBox="0 0 100 100"><path d="M12 104 C12 78 29 67 50 67 C71 67 88 78 88 104Z" fill="#F2C14E"/><path d="M44 67 L50 78 L56 67" fill="none" stroke="#B8860B" stroke-width="2.5"/><circle cx="50" cy="84" r="1.6" fill="#B8860B"/><circle cx="50" cy="91" r="1.6" fill="#B8860B"/><rect x="43" y="56" width="14" height="16" rx="6" fill="#8D5A3B"/><ellipse cx="50" cy="44" rx="19" ry="21" fill="#8D5A3B"/><circle cx="43" cy="45" r="1.9" fill="#2B1D1A"/><circle cx="57" cy="45" r="1.9" fill="#2B1D1A"/><path d="M45 53 Q50 57 55 53" stroke="#5A2E1A" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="M43 51 Q50 47 57 51 Q50 53 43 51Z" fill="#2B1D1A"/><path d="M31 42 C30 22 40 17 50 17 C61 17 71 22 69 42 C66 30 59 27 50 27 C41 27 34 30 31 42Z" fill="#2B1D1A"/></symbol>
+  </defs>
+</svg>
+
+<main class="poster">
+
+  <!-- Header -->
+  <header class="header">
+    <div class="logo"><svg viewBox="0 0 24 24" fill="#fff"><use href="#heart"/></svg></div>
+    <div class="title">
+      <h1>JANANI<span>.</span></h1>
+      <p><b>Early risk detection &amp; closed-loop care</b> for safer pregnancies</p>
+      <div class="meta">
+      <span class="pill" style="background:var(--lavender);color:var(--violet)">Category: Pharmacy</span>
+      <span class="pill" style="background:var(--peach);color:var(--cocoa)">Level: UG</span>
+      <span class="pill" style="background:var(--soft);color:var(--text);font-weight:500">[Team names] · [College]</span>
+      </div>
+    </div>
+    <svg class="hero" viewBox="0 0 330 250" role="img" aria-label="An ASHA worker shows the Janani app to a pregnant mother"><circle cx="168" cy="140" r="108" fill="#FFE1CC"/><circle cx="52" cy="58" r="22" fill="#DDF0E2"/><path d="M42 58 l7 7 l13 -14" stroke="#2F8F55" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="292" cy="54" r="22" fill="#F8DCDC"/><path d="M292 66 C281 58 282 48 288 48 C290.5 48 291.5 50 292 51.5 C292.5 50 293.5 48 296 48 C302 48 303 58 292 66Z" fill="#D9577A"/><g transform="translate(40 70) scale(1.25)"><circle cx="34" cy="27" r="9.5" fill="#2B1D1A"/><path d="M6 140 C6 86 24 68 50 66 C76 68 94 86 94 140Z" fill="#8DBCEB"/><path d="M22 74 L86 140 L70 140 L14 82Z" fill="#2F5FA8"/><path d="M24 76 L84 138" stroke="#F2C14E" stroke-width="2"/><rect x="43" y="56" width="14" height="16" rx="6" fill="#B97A57"/><ellipse cx="50" cy="44" rx="19" ry="21" fill="#B97A57"/><circle cx="45" cy="45" r="1.9" fill="#2B1D1A"/><circle cx="59" cy="45" r="1.9" fill="#2B1D1A"/><path d="M45 53 Q50 57 55 53" stroke="#5A2E1A" stroke-width="1.8" fill="none" stroke-linecap="round"/><circle cx="50" cy="36" r="1.8" fill="#D64545"/><circle cx="31" cy="50" r="2.2" fill="#F2C14E"/><circle cx="69" cy="50" r="2.2" fill="#F2C14E"/><path d="M31 45 C29 22 40 18 50 18 C61 18 72 23 69 46 C66 32 59 28 50 28 C41 28 34 32 31 45Z" fill="#2B1D1A"/><path d="M80 96 C96 96 108 90 116 78" stroke="#B97A57" stroke-width="11" fill="none" stroke-linecap="round"/><g transform="rotate(-14 122 66)"><rect x="110" y="44" width="25" height="42" rx="5" fill="#2B2440"/><rect x="113.5" y="49" width="18" height="31" rx="2.5" fill="#fff"/><path d="M122.5 69 C116 64.5 116.5 59 120 59 C121.6 59 122.2 60.2 122.5 61 C122.8 60.2 123.4 59 125 59 C128.5 59 129 64.5 122.5 69Z" fill="#D9577A"/><rect x="116" y="72" width="13" height="2.6" rx="1.3" fill="#DDF0E2"/></g><circle cx="116" cy="78" r="7" fill="#B97A57"/></g><g transform="translate(190 74) scale(1.24)"><circle cx="66" cy="27" r="9.5" fill="#2B1D1A"/><path d="M4 140 C6 88 24 70 50 68 C76 70 94 88 96 140Z" fill="#E88AA3"/><ellipse cx="56" cy="118" rx="34" ry="24" fill="#F3AFC2"/><path d="M18 80 L80 140 L66 140 L12 88Z" fill="#C2416A"/><path d="M20 82 L78 138" stroke="#F2C14E" stroke-width="2"/><rect x="43" y="56" width="14" height="16" rx="6" fill="#A86F4C"/><ellipse cx="50" cy="44" rx="19" ry="21" fill="#A86F4C"/><circle cx="41" cy="45" r="1.9" fill="#2B1D1A"/><circle cx="55" cy="45" r="1.9" fill="#2B1D1A"/><path d="M45 53 Q50 57 55 53" stroke="#5A2E1A" stroke-width="1.8" fill="none" stroke-linecap="round"/><circle cx="50" cy="36" r="1.8" fill="#D64545"/><circle cx="31" cy="50" r="2.2" fill="#F2C14E"/><circle cx="69" cy="50" r="2.2" fill="#F2C14E"/><path d="M31 45 C29 22 40 18 50 18 C61 18 72 23 69 46 C66 32 59 28 50 28 C41 28 34 32 31 45Z" fill="#2B1D1A"/><path d="M40 71 Q50 80 60 71" stroke="#F2C14E" stroke-width="2" fill="none"/><ellipse cx="66" cy="114" rx="11" ry="7" fill="#A86F4C"/></g></svg>
+  </header>
+
+  <!-- 1. Problem -->
+  <section class="problem">
+    <div>
+      <h2><span class="num">01</span>The problem</h2>
+      <div class="issues">
+        <div class="issue"><div class="ic" style="background:var(--blush);color:var(--danger)"><svg class="i"><use href="#chart"/></svg></div>
+          <div><h3>~22,500 deaths a year</h3><p>India records 88 maternal deaths per 100,000 live births — roughly one every 25 minutes.</p></div></div>
+        <div class="issue"><div class="ic" style="background:var(--peach);color:var(--orange)"><svg class="i"><use href="#cal"/></svg></div>
+          <div><h3>Missed ANC visits</h3><p>Full antenatal care coverage is lowest among rural, tribal and poor women.</p></div></div>
+        <div class="issue"><div class="ic" style="background:var(--sky);color:var(--info)"><svg class="i"><use href="#clip"/></svg></div>
+          <div><h3>No continuous monitoring</h3><p>BP, Hb and weight sit on paper cards — never analysed as a trend.</p></div></div>
+        <div class="issue"><div class="ic" style="background:var(--lavender);color:var(--violet)"><svg class="i"><use href="#clock"/></svg></div>
+          <div><h3>The three delays</h3><p>In recognising danger, in reaching a facility, and in receiving care.</p></div></div>
+      </div>
+      <div class="stats">
+        <div class="stat" style="background:var(--butter)"><b>88 → 87</b><span>India MMR: one point of progress. SDG target: under 70</span></div>
+        <div class="stat" style="background:var(--blush)"><b style="color:var(--danger)">73%</b><span>of pregnant women in Nashik are anaemic</span></div>
+        <div class="stat" style="background:var(--lavender)"><b style="color:var(--violet)">47–63%</b><span>of women who stop iron say they simply forgot</span></div>
+      </div>
+    </div>
+    <div class="card chart">
+      <h3>Iron reaches mothers — but not for long enough</h3>
+      <p>Coverage falls at every step of the antenatal journey</p>
+      <div class="bar"><span>Any antenatal care</span><div class="track"><div class="fill" style="width:95.9%"></div></div><b>95.9%</b></div>
+      <div class="bar"><span>Four or more visits</span><div class="track"><div class="fill" style="width:65.2%"></div></div><b>65.2%</b></div>
+      <div class="bar"><span>Iron for 100+ days</span><div class="track"><div class="fill" style="width:54.9%"></div></div><b>54.9%</b></div>
+      <div class="bar"><span>Iron for 180+ days</span><div class="track"><div class="fill" style="width:37.8%;background:var(--danger)"></div></div><b style="color:var(--danger)">37.8%</b></div>
+      <div class="drop"><b>58</b> percentage points lost between first contact and a full iron course — the gap Janani targets.</div>
+    </div>
+  </section>
+
+  <!-- 2. Closed loop -->
+  <section class="loop">
+    <h2><span class="num">02</span>The closed loop: from a missed tablet to a PHC decision</h2>
+    <p class="sub">Janani closes the three delays — early recognition of risk, quick access to care, and health workers alerted before the mother arrives.</p>
+    <div class="steps">
+      <div class="step"><div class="dot" style="background:var(--peach)"><svg class="i"><use href="#pill"/></svg><span class="n">1</span></div><h4>Mother skips iron</h4><p>Ticks medicines daily on her phone — or doesn't</p></div>
+      <div class="step"><div class="dot" style="background:var(--butter)"><svg class="i"><use href="#chart"/></svg><span class="n">2</span></div><h4>Risk is rescored</h4><p>3 days missed raises her score, with reasons</p></div>
+      <div class="step"><div class="dot" style="background:var(--blush)"><svg class="i"><use href="#bell"/></svg><span class="n">3</span></div><h4>Alert reaches ASHA</h4><p>Urgent alert, synced the moment there is signal</p></div>
+      <div class="step"><div class="dot" style="background:var(--mint)"><svg class="i"><use href="#home"/></svg><span class="n">4</span></div><h4>ASHA calls or visits</h4><p>Logs the visit; escalates if needed</p></div>
+      <div class="step"><div class="dot" style="background:var(--sky)"><svg class="i"><use href="#shield"/></svg><span class="n">5</span></div><h4>ANM decides</h4><p>Confirms high-risk, clears, or refers</p></div>
+      <div class="step"><div class="dot" style="background:var(--lavender)"><svg class="i"><use href="#hosp"/></svg><span class="n">6</span></div><h4>PHC acts</h4><p>Doctors see only ANM-confirmed high-risk cases</p></div>
+    </div>
+  </section>
+
+  <!-- 3. Prototype + users -->
+  <section class="proto-row">
+    <div>
+    <h2><span class="num">03</span>Working prototype</h2>
+    <div class="proto">
+      <div class="phone"><div class="frame"><img src="shots/patient.png" alt="Mother home screen"></div><h4>Mother · Home</h4><p>Week, checkup, medicines</p></div>
+      <div class="phone"><div class="frame"><img src="shots/medicines.png" alt="Medicine tracker"></div><h4>Medicine tracker</h4><p>Tap to take · 7-day adherence</p></div>
+      <div class="phone"><div class="frame"><img src="shots/asha.png" alt="ASHA dashboard"></div><h4>ASHA dashboard</h4><p>Sorted by risk, with reasons</p></div>
+      <div class="phone"><div class="frame"><img src="shots/anm.png" alt="ANM clinical inbox"></div><h4>ANM inbox</h4><p>Confirm HRP · refer · clear</p></div>
+    </div>
+      </div>
+    <div class="card">
+      <h2><span class="num">04</span>Who uses it</h2>
+      <div class="user"><div class="avatar portrait" style="background:var(--peach)"><svg viewBox="0 0 100 100" aria-hidden="true"><use href="#p-mother"/></svg></div><div><h4>Pregnant women<span class="tag" style="background:var(--peach);color:var(--cocoa)">primary</span></h4><p>Track medicines, report symptoms, get help</p></div></div>
+      <div class="user"><div class="avatar portrait" style="background:var(--mint)"><svg viewBox="0 0 100 100" aria-hidden="true"><use href="#p-asha"/></svg></div><div><h4>ASHA workers<span class="tag" style="background:var(--peach);color:var(--cocoa)">primary</span></h4><p>Visit, record vitals, act on alerts</p></div></div>
+      <div class="user"><div class="avatar portrait" style="background:var(--sky)"><svg viewBox="0 0 100 100" aria-hidden="true"><use href="#p-anm"/></svg></div><div><h4>ANM / midwife<span class="tag" style="background:var(--soft);color:var(--muted)">secondary</span></h4><p>Confirms, clears or refers cases</p></div></div>
+      <div class="user"><div class="avatar portrait" style="background:var(--lavender)"><svg viewBox="0 0 100 100" aria-hidden="true"><use href="#p-doctor"/></svg></div><div><h4>PHC doctors<span class="tag" style="background:var(--soft);color:var(--muted)">secondary</span></h4><p>Review the confirmed high-risk registry</p></div></div>
+      <div class="user"><div class="avatar portrait" style="background:var(--butter)"><svg viewBox="0 0 100 100" aria-hidden="true"><use href="#p-family"/></svg></div><div><h4>Family caregiver</h4><p>Reminders, with the mother's consent</p></div></div>
+    </div>
+  </section>
+
+  <!-- 4. Features / Architecture / Comparison -->
+  <section class="three">
+    <div class="card">
+      <h2><span class="num">05</span>Key features</h2>
+      <div class="feat"><div class="ic" style="background:var(--butter);color:var(--cocoa)"><svg class="i"><use href="#chart"/></svg></div><div><h4>Explainable risk engine</h4><p>MoHFW high-risk pregnancy rules; every alert shows why</p></div></div>
+      <div class="feat"><div class="ic" style="background:var(--peach);color:var(--orange)"><svg class="i"><use href="#pill"/></svg></div><div><h4>Medicine adherence</h4><p>Daily checklist; 3 missed days alert the ASHA</p></div></div>
+      <div class="feat"><div class="ic" style="background:var(--blush);color:var(--danger)"><svg class="i"><use href="#sos"/></svg></div><div><h4>Danger signs &amp; SOS</h4><p>Report symptoms, call 108 or the ASHA, SMS without data</p></div></div>
+      <div class="feat"><div class="ic" style="background:var(--sky);color:var(--info)"><svg class="i"><use href="#cal"/></svg></div><div><h4>ANC &amp; PMSMA reminders</h4><p>Free checkup countdown, TT/Td schedule</p></div></div>
+      <div class="feat"><div class="ic" style="background:var(--mint);color:var(--success)"><svg class="i"><use href="#food"/></svg></div><div><h4>Month-by-month diet</h4><p>Local foods, in Marathi, Hindi and English</p></div></div>
+    </div>
+
+    <div class="card">
+      <h2><span class="num">06</span>System architecture</h2>
+      <div class="arch">
+        <div class="layer" style="background:var(--lavender)"><div class="ic" style="color:var(--violet)"><svg class="i"><use href="#mobile"/></svg></div><div><h4>Flutter app — 5 roles</h4><p>Offline-first · Hive sync outbox · 3 languages</p></div></div>
+        <div class="layer" style="background:var(--sky)"><div class="ic" style="color:var(--info)"><svg class="i"><use href="#db"/></svg></div><div><h4>Supabase backend</h4><p>Postgres · OTP login · RLS · Realtime</p></div></div>
+        <div class="layer" style="background:var(--butter)"><div class="ic" style="color:var(--cocoa)"><svg class="i"><use href="#cpu"/></svg></div><div><h4>Risk engine</h4><p>MoHFW rules · on-device + SQL · 32 tests</p></div></div>
+        <div class="layer" style="background:var(--blush)"><div class="ic" style="color:var(--danger)"><svg class="i"><use href="#bell"/></svg></div><div><h4>Escalation ladder</h4>
+          <div class="ladder"><span>Mother</span><i>›</i><span>ASHA</span><i>›</i><span>ANM</span><i>›</i><span>PHC</span></div></div></div>
+        <p class="phase">Phase 2 · SMS &amp; voice alerts · RCH ID integration</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="num">07</span>What's different?</h2>
+      <table>
+        <thead><tr><th></th><th>Paper card</th><th>RCH &amp; ANMOL</th><th class="j">Janani</th></tr></thead>
+        <tbody>
+          <tr><td>Daily adherence signal</td><td><span class="mk"></span></td><td><span class="mk"></span></td><td class="jc"><span class="mk j"></span></td></tr>
+          <tr><td>Reasons shown with alerts</td><td><span class="mk"></span></td><td><span class="mk"></span></td><td class="jc"><span class="mk j"></span></td></tr>
+          <tr><td>ASHA → ANM → PHC chain</td><td><span class="mk"></span></td><td><span class="mk half"></span></td><td class="jc"><span class="mk j"></span></td></tr>
+          <tr><td>Family caregiver role</td><td><span class="mk"></span></td><td><span class="mk"></span></td><td class="jc"><span class="mk j"></span></td></tr>
+          <tr><td>Works offline</td><td><span class="mk full"></span></td><td><span class="mk full"></span></td><td class="jc"><span class="mk j"></span></td></tr>
+        </tbody>
+      </table>
+      <p class="note">● full &nbsp; ◐ partial &nbsp; ○ none — based on public documentation of RCH and ANMOL. Janani complements them and can link via the RCH ID.</p>
+    </div>
+  </section>
+
+  <!-- 5. Impact + feasibility -->
+  <section class="card strip">
+    <h2><span class="num">08</span>Impact &amp; feasibility</h2>
+    <div class="tiles">
+      <div class="imp" style="background:var(--mint)"><svg class="i" style="color:var(--success)"><use href="#shield"/></svg><h4>Early detection</h4><p>Risk flagged days earlier</p></div>
+      <div class="imp" style="background:var(--sky)"><svg class="i" style="color:var(--info)"><use href="#cal"/></svg><h4>ANC compliance</h4><p>Checkup &amp; iron nudges</p></div>
+      <div class="imp" style="background:var(--blush)"><svg class="i" style="color:var(--danger)"><use href="#heart"/></svg><h4>Lower risk</h4><p>Faster escalation</p></div>
+      <div class="imp" style="background:var(--lavender)"><svg class="i" style="color:var(--violet)"><use href="#users"/></svg><h4>Coordination</h4><p>One view for the team</p></div>
+      <div class="imp feasible"><svg class="i"><use href="#users"/></svg><h4>Real demand</h4><p>Fits ASHA &amp; PHC network</p></div>
+      <div class="imp feasible"><svg class="i"><use href="#mobile"/></svg><h4>Feasible</h4><p>Low-cost phones, offline</p></div>
+      <div class="imp feasible"><svg class="i"><use href="#trend"/></svg><h4>Scalable</h4><p>Pilot → district → state</p></div>
+    </div>
+  </section>
+</main>
+</body>
+</html>

@@ -21,6 +21,26 @@ enum UserRole {
     }
   }
 
+  /// Route of this role's home screen.
+  String get homeRoute {
+    switch (this) {
+      case UserRole.patient:
+        return '/patient_home';
+      case UserRole.asha:
+        return '/asha_home';
+      case UserRole.anm:
+        return '/anm_home';
+      case UserRole.supervisor:
+        return '/supervisor_home';
+      case UserRole.caregiver:
+        return '/caregiver_home';
+    }
+  }
+
+  /// Health-worker roles that can lock the app with an offline PIN.
+  bool get isStaff =>
+      this == UserRole.asha || this == UserRole.anm || this == UserRole.supervisor;
+
   String get displayName {
     switch (this) {
       case UserRole.patient:
@@ -44,7 +64,6 @@ class AppUser {
   final UserRole role;
   final String language;
   final String? phcId;
-  final String? pinHash;
 
   const AppUser({
     required this.id,
@@ -53,7 +72,6 @@ class AppUser {
     required this.role,
     this.language = 'en',
     this.phcId,
-    this.pinHash,
   });
 
   Map<String, dynamic> toMap() {
@@ -64,7 +82,6 @@ class AppUser {
       'role': role.name,
       'language': language,
       'phc_id': phcId,
-      'pin_hash': pinHash,
     };
   }
 
@@ -76,7 +93,6 @@ class AppUser {
       role: UserRole.fromString(map['role']?.toString() ?? 'patient'),
       language: map['language']?.toString() ?? 'en',
       phcId: map['phc_id']?.toString(),
-      pinHash: map['pin_hash']?.toString(),
     );
   }
 }

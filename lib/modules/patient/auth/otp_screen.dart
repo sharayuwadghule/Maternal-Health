@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../app_state.dart';
 import '../../../core/models/app_user.dart';
 import '../../../core/repositories/auth_repository.dart';
+import '../../../core/repositories/care_team_repository.dart';
+import '../../../core/repositories/patient_repository.dart';
+import '../../../core/theme/app_theme.dart';
 
 class OtpScreen extends StatefulWidget {
   const OtpScreen({super.key});
@@ -11,170 +15,166 @@ class OtpScreen extends StatefulWidget {
 }
 
 class _OtpScreenState extends State<OtpScreen> {
-  final List<TextEditingController> _controllers =
-      List.generate(4, (index) => TextEditingController());
-  final List<FocusNode> _focusNodes = List.generate(4, (index) => FocusNode());
-  String? _errorMessage;
+  static const int _codeLength = 6;
+
+  final TextEditingController _codeController = TextEditingController();
+  OtpRequest? _request;
+  UserRole _role = UserRole.patient;
+  bool _loading = false;
+  String? _error;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_request == null) {
+      final args = ModalRoute.of(context)?.settings.arguments as Map?;
+      _request = args?['request'] as OtpRequest?;
+      _role = args?['role'] as UserRole? ?? UserRole.patient;
+    }
+  }
 
   @override
   void dispose() {
-    for (var controller in _controllers) {
-      controller.dispose();
-    }
-    for (var node in _focusNodes) {
-      node.dispose();
-    }
+    _codeController.dispose();
     super.dispose();
+  }
+
+  Future<void> _verify() async {
+    final request = _request;
+    if (request == null) return;
+    final code = _codeController.text.trim();
+    if (code.length != _codeLength) return;
+
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final user = await AuthRepository.instance.verifyOtp(
+        request: request,
+        otp: code,
+        demoRole: _role,
+      );
+      AppState.instance.setUser(user);
+      if (user.role == UserRole.patient) {
+        CareTeamRepository.instance.refresh(PatientRepository.instance.findByProfileId(user.id));
+      }
+      if (!mounted) return;
+      final next = user.role.isStaff && !AuthRepository.instance.hasOfflinePin
+          ? '/asha_pin_login' // first sign-in: set a device PIN
+          : user.role.homeRoute;
+      Navigator.pushNamedAndRemoveUntil(context, next, (_) => false);
+    } on AuthFailure catch (e) {
+      setState(() => _error = e.message);
+    } catch (_) {
+      setState(() => _error = AppState.instance.translate(
+            'Verification failed. Check your network and try again.',
+            'सत्यापन विफल। नेटवर्क जांचें और पुनः प्रयास करें।',
+            'पडताळणी अयशस्वी. नेटवर्क तपासा आणि पुन्हा प्रयत्न करा.',
+          ));
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _resend() async {
+    final request = _request;
+    if (request == null) return;
+    try {
+      final fresh = await AuthRepository.instance.requestOtp(request.phone);
+      setState(() {
+        _request = fresh;
+        _codeController.clear();
+        _error = null;
+      });
+    } on AuthFailure catch (e) {
+      setState(() => _error = e.message);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final state = AppState.instance;
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      extendBodyBehindAppBar: true,
-      body: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 20),
-                Text(
-                  state.translate('Verify OTP', 'ओटीपी सत्यापित करें', 'ओटीपी सत्यापित करा'),
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  state.translate('We have sent a 4-digit code to your phone number.', 'हमने आपके फोन नंबर पर 4 अंकों का कोड भेजा है।', 'आम्ही तुमच्या फोन नंबरवर ४-अंकी कोड पाठवला आहे.'),
-                  style: Theme.of(context).textTheme.bodyLarge,
-                ),
-                if (_errorMessage != null) ...[
-                  const SizedBox(height: 16),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.red[50],
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.red[100]!),
-                    ),
-                    child: Text(
-                      _errorMessage!,
-                      style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 60),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: List.generate(
-                    4,
-                    (index) => SizedBox(
-                      width: 70,
-                      child: TextField(
-                        controller: _controllers[index],
-                        focusNode: _focusNodes[index],
-                        keyboardType: TextInputType.number,
-                        textAlign: TextAlign.center,
-                        maxLength: 1,
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        decoration: InputDecoration(
-                          counterText: '',
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide(color: Colors.grey[300]!),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide(
-                              color: Theme.of(context).colorScheme.primary,
-                              width: 2,
-                            ),
-                          ),
-                        ),
-                        onChanged: (value) {
-                          if (value.isNotEmpty && index < 3) {
-                            _focusNodes[index + 1].requestFocus();
-                          } else if (value.isEmpty && index > 0) {
-                            _focusNodes[index - 1].requestFocus();
-                          }
-                        },
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 40),
-                ElevatedButton(
-                  onPressed: () {
-                    // 1. Get the expected OTP from arguments
-                    final expectedOtp = ModalRoute.of(context)!.settings.arguments as String?;
-                    
-                    // 2. Combine the 4 digits entered by the user
-                    String enteredOtp = _controllers.map((c) => c.text).join();
+    final theme = Theme.of(context);
+    final demoCode = _request?.demoCode;
 
-                    // 3. Verify
-                    if (enteredOtp == expectedOtp || enteredOtp == '1234') {
-                      // Success: authenticate as Patient
-                      AuthRepository.instance.loginAsDemoRole(UserRole.patient).then((user) {
-                        state.setUser(user);
-                        if (context.mounted) {
-                          Navigator.pushNamedAndRemoveUntil(
-                            context,
-                            '/patient_home',
-                            (route) => false,
-                          );
-                        }
-                      });
-                    } else {
-                      // Fail - Update inline error message
-                      setState(() {
-                        _errorMessage = state.translate(
-                          'Wrong Code! Please check again.',
-                          'गलत कोड! कृपया फिर से जाँचें।',
-                          'चुकीचा कोड! कृपया पुन्हा तपासा.'
-                        );
-                      });
-                    }
-                  },
-                  child: Text(
-                    state.translate('Verify & Proceed', 'सत्यापित करें और आगे बढ़ें', 'सत्यापित करा आणि पुढे जा'),
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
+    return Scaffold(
+      appBar: AppBar(backgroundColor: Colors.transparent),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          children: [
+            Text(
+              state.translate('Enter the code', 'कोड दर्ज करें', 'कोड टाका'),
+              style: theme.textTheme.headlineMedium,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              state.translate(
+                'We sent a 6-digit code to +91 ${_request?.phone ?? ''}',
+                'हमने +91 ${_request?.phone ?? ''} पर 6 अंकों का कोड भेजा है',
+                'आम्ही +91 ${_request?.phone ?? ''} वर ६ अंकी कोड पाठवला आहे',
+              ),
+              style: theme.textTheme.bodyLarge,
+            ),
+            if (demoCode != null) ...[
+              const SizedBox(height: AppSpacing.md),
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: AppColors.infoContainer,
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
-                const SizedBox(height: 24),
-                Center(
-                  child: TextButton(
-                    onPressed: () {},
-                    child: Text(
-                      state.translate('Resend Code', 'कोड दोबारा भेजें', 'कोड पुन्हा पाठवा'),
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.w600,
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline_rounded, color: AppColors.info),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Text(
+                        'Demo mode – no SMS is sent. Your code is $demoCode',
+                        style: const TextStyle(color: AppColors.info, fontWeight: FontWeight.w600),
                       ),
                     ),
-                  ),
+                  ],
                 ),
+              ),
+            ],
+            const SizedBox(height: AppSpacing.xl),
+            TextField(
+              controller: _codeController,
+              autofocus: true,
+              keyboardType: TextInputType.number,
+              autofillHints: const [AutofillHints.oneTimeCode],
+              textAlign: TextAlign.center,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(_codeLength),
               ],
+              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w700, letterSpacing: 14),
+              decoration: InputDecoration(
+                hintText: '••••••',
+                errorText: _error,
+                errorMaxLines: 3,
+              ),
+              onChanged: (v) {
+                if (v.length == _codeLength) _verify();
+              },
             ),
-          ),
+            const SizedBox(height: AppSpacing.lg),
+            ElevatedButton(
+              onPressed: _loading ? null : _verify,
+              child: _loading
+                  ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
+                  : Text(state.translate('Verify and continue', 'सत्यापित करें और आगे बढ़ें', 'सत्यापित करा आणि पुढे जा')),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Center(
+              child: TextButton(
+                onPressed: _loading ? null : _resend,
+                child: Text(state.translate('Resend code', 'कोड दोबारा भेजें', 'कोड पुन्हा पाठवा')),
+              ),
+            ),
+          ],
         ),
       ),
     );

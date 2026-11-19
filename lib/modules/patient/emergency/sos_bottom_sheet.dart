@@ -2,123 +2,174 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../app_state.dart';
+import '../../../core/config/app_config.dart';
+import '../../../core/repositories/care_team_repository.dart';
+import '../../../core/repositories/patient_repository.dart';
+import '../../../core/theme/app_theme.dart';
 
-class SosBottomSheet extends StatelessWidget {
+/// Emergency options for the mother.
+///
+/// Every action records an SOS event and an urgent alert for the assigned
+/// ASHA (queued offline if needed). The "no internet" option opens the
+/// phone's SMS app with a pre-filled message – SMS works on a basic cellular
+/// signal without mobile data.
+class SosBottomSheet extends StatefulWidget {
   const SosBottomSheet({super.key});
 
   static void show(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
       builder: (context) => const SosBottomSheet(),
     );
   }
 
-  Future<void> _makePhoneCall(String phoneNumber) async {
-    final Uri launchUri = Uri(
-      scheme: 'tel',
-      path: phoneNumber,
-    );
-    if (await canLaunchUrl(launchUri)) {
-      await launchUrl(launchUri);
+  @override
+  State<SosBottomSheet> createState() => _SosBottomSheetState();
+}
+
+class _SosBottomSheetState extends State<SosBottomSheet> {
+  bool _recorded = false;
+
+  Future<void> _recordOnce() async {
+    if (_recorded) return;
+    _recorded = true;
+    final patient = PatientRepository.instance
+        .findByProfileId(AppState.instance.currentUser?.id);
+    if (patient != null) {
+      await CareTeamRepository.instance.recordSos(patient);
+    }
+  }
+
+  Future<void> _launch(Uri uri, String failureMessage) async {
+    await _recordOnce();
+    bool ok = false;
+    try {
+      ok = await launchUrl(uri);
+    } catch (_) {
+      ok = false;
+    }
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(failureMessage)));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
+    final theme = Theme.of(context);
+    final asha = CareTeamRepository.instance.assignedAsha();
+    final patientName = state.currentUser?.name ?? '';
+    final cannotOpen = state.translate(
+      'Could not open the phone app on this device.',
+      'इस डिवाइस पर फ़ोन ऐप नहीं खुल सका।',
+      'या डिव्हाइसवर फोन अ‍ॅप उघडता आले नाही.',
+    );
 
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-        left: 24,
-        right: 24,
-        top: 24,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                state.translate('Emergency Options', 'आपातकालीन विकल्प', 'तातडीचे पर्याय'),
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              state.translate('Emergency help', 'आपातकालीन सहायता', 'तातडीची मदत'),
+              style: theme.textTheme.headlineSmall,
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              state.translate(
+                'Your ASHA will be alerted automatically.',
+                'आपकी आशा को स्वतः सूचित किया जाएगा।',
+                'तुमच्या आशा कार्यकर्तीला आपोआप कळवले जाईल.',
               ),
-              IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () => Navigator.pop(context),
-              )
-            ],
-          ),
-          const SizedBox(height: 24),
-          
-          _buildSosButton(
-            context,
-            state.translate('Call My ASHA', 'मेरी आशा को कॉल करें', 'माझ्या आशाला कॉल करा'),
-            Icons.medical_services,
-            Colors.orange,
-            () => _makePhoneCall('9876543210'), // Mock ASHA Number
-          ),
-          const SizedBox(height: 16),
-          
-          _buildSosButton(
-            context,
-            state.translate('Call Ambulance (108)', 'एम्बुलेंस बुलाएं (108)', 'रुग्णवाहिका बोलवा (108)'),
-            Icons.emergency,
-            Colors.red,
-            () => _makePhoneCall('108'),
-          ),
-          const SizedBox(height: 16),
-
-          // Mock SMS Fallback
-          ListTile(
-            leading: const Icon(Icons.sms_failed, color: Colors.grey),
-            title: Text(
-              state.translate('No Network?', 'नेटवर्क नहीं है?', 'नेटवर्क नाही?'),
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              style: theme.textTheme.bodyMedium,
             ),
-            subtitle: Text(
-              state.translate('Tap to send an offline SMS alert.', 'ऑफ़लाइन एसएमएस अलर्ट भेजने के लिए टैप करें।', 'ऑफलाइन एसएमएस अलर्ट पाठवण्यासाठी टॅप करा.'),
+            const SizedBox(height: AppSpacing.lg),
+            _SosAction(
+              icon: Icons.emergency_rounded,
+              title: state.translate('Call ambulance (${AppConfig.ambulanceNumber})', 'एम्बुलेंस बुलाएं (${AppConfig.ambulanceNumber})', 'रुग्णवाहिका बोलवा (${AppConfig.ambulanceNumber})'),
+              color: AppColors.danger,
+              filled: true,
+              onTap: () => _launch(Uri(scheme: 'tel', path: AppConfig.ambulanceNumber), cannotOpen),
             ),
-            onTap: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(state.translate('SMS Alert Queued. Will send when signal returns.', 'एसएमएस अलर्ट कतारबद्ध। सिग्नल आने पर भेजा जाएगा।', 'एसएमएस अलर्ट रांगेत आहे. सिग्नल आल्यावर पाठवले जाईल.')),
-                  backgroundColor: Colors.blueGrey,
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 32),
-        ],
+            const SizedBox(height: AppSpacing.sm + 4),
+            _SosAction(
+              icon: Icons.call_rounded,
+              title: asha != null
+                  ? state.translate('Call my ASHA – ${asha.name}', 'मेरी आशा को कॉल करें – ${asha.name}', 'माझ्या आशाला कॉल करा – ${asha.name}')
+                  : state.translate('ASHA number not available', 'आशा का नंबर उपलब्ध नहीं', 'आशाचा नंबर उपलब्ध नाही'),
+              color: AppColors.primary,
+              onTap: asha == null
+                  ? null
+                  : () => _launch(Uri(scheme: 'tel', path: asha.phone), cannotOpen),
+            ),
+            const SizedBox(height: AppSpacing.sm + 4),
+            _SosAction(
+              icon: Icons.sms_rounded,
+              title: state.translate('No internet? Send SMS to ASHA', 'इंटरनेट नहीं? आशा को SMS भेजें', 'इंटरनेट नाही? आशाला SMS पाठवा'),
+              color: AppColors.textPrimary,
+              onTap: asha == null
+                  ? null
+                  : () => _launch(
+                        Uri(
+                          scheme: 'sms',
+                          path: asha.phone,
+                          queryParameters: {
+                            'body': 'EMERGENCY (Janani): $patientName needs urgent help. Please call back immediately.',
+                          },
+                        ),
+                        cannotOpen,
+                      ),
+            ),
+          ],
+        ),
       ),
     );
   }
+}
 
-  Widget _buildSosButton(BuildContext context, String title, IconData icon, Color color, VoidCallback onTap) {
-    return ElevatedButton(
-      onPressed: onTap,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color,
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 28, color: Colors.white),
-          const SizedBox(width: 12),
-          Text(
-            title,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+class _SosAction extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final Color color;
+  final bool filled;
+  final VoidCallback? onTap;
+
+  const _SosAction({
+    required this.icon,
+    required this.title,
+    required this.color,
+    this.filled = false,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = filled ? Colors.white : color;
+    return Material(
+      color: filled ? color : color.withValues(alpha: 0.08),
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        onTap: onTap,
+        child: Opacity(
+          opacity: onTap == null ? 0.5 : 1,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 18),
+            child: Row(
+              children: [
+                Icon(icon, color: fg, size: 28),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Text(title, style: TextStyle(color: fg, fontSize: 17, fontWeight: FontWeight.w700)),
+                ),
+                Icon(Icons.chevron_right_rounded, color: fg),
+              ],
+            ),
           ),
-        ],
+        ),
       ),
     );
   }

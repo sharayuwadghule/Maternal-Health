@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../app_state.dart';
 
 // ── Language codes ──────────────────────────────────────────────────────────
@@ -219,11 +220,11 @@ class _ChatbotWidgetState extends State<ChatbotWidget>
   String _greeting(ChatLanguage lang) {
     switch (lang) {
       case ChatLanguage.hindi:
-        return 'नमस्ते! 🌸 मैं आपकी गर्भावस्था सहायक हूँ। नीचे से कोई प्रश्न चुनें या सीधे टाइप करें।';
+        return 'नमस्ते! मैं आपकी गर्भावस्था सहायक हूँ। नीचे से कोई प्रश्न चुनें या सीधे टाइप करें।';
       case ChatLanguage.marathi:
-        return 'नमस्कार! 🌸 मी तुमची गर्भावस्था सहाय्यक आहे. खाली कोणता प्रश्न निवडा किंवा थेट टाइप करा.';
+        return 'नमस्कार! मी तुमची गर्भावस्था सहाय्यक आहे. खाली कोणता प्रश्न निवडा किंवा थेट टाइप करा.';
       case ChatLanguage.english:
-        return 'Hello! 🌸 I\'m your pregnancy assistant. Pick a question below or type your own.';
+        return 'Hello! I\'m your pregnancy assistant. Pick a question below or type your own.';
     }
   }
 
@@ -344,7 +345,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget>
             width: 62,
             height: 62,
             decoration: BoxDecoration(
-              color: _isOpen ? Colors.grey.shade600 : Theme.of(context).colorScheme.primary,
+              color: _isOpen ? AppColors.textSecondary : Theme.of(context).colorScheme.primary,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
@@ -398,7 +399,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: const BoxDecoration(
-        color: Color(0xFFFF8B94),
+        color: AppColors.accent,
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
@@ -409,7 +410,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget>
           const CircleAvatar(
             backgroundColor: Colors.white,
             radius: 18,
-            child: Icon(Icons.pregnant_woman, color: Color(0xFFFF8B94), size: 22),
+            child: Icon(Icons.pregnant_woman, color: AppColors.accent, size: 22),
           ),
           const SizedBox(width: 10),
           const Expanded(
@@ -439,7 +440,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget>
             ),
             child: Row(
               children: [
-                const Icon(Icons.circle, color: Color(0xFF90EE90), size: 8),
+                const Icon(Icons.circle, color: AppColors.mint, size: 8),
                 const SizedBox(width: 4),
                 Text(AppState.instance.translate('Online', 'ऑनलाइन', 'ऑनलाइन'), style: const TextStyle(color: Colors.white, fontSize: 11)),
               ],
@@ -472,7 +473,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget>
         constraints: const BoxConstraints(maxWidth: 260),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: msg.isUser ? const Color(0xFFFF8B94) : const Color(0xFFF5F5F5),
+          color: msg.isUser ? AppColors.accent : AppColors.muted,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(18),
             topRight: const Radius.circular(18),
@@ -490,7 +491,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget>
         child: Text(
           msg.text,
           style: TextStyle(
-            color: msg.isUser ? Colors.white : const Color(0xFF3D3D3D),
+            color: msg.isUser ? Colors.white : AppColors.textPrimary,
             fontSize: 13.5,
             height: 1.5,
           ),
@@ -501,7 +502,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget>
 
   Widget _buildFaqChips() {
     return Container(
-      color: const Color(0xFFFFF9F9),
+      color: AppColors.background,
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
       height: 88,
       child: Column(
@@ -511,7 +512,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget>
             padding: const EdgeInsets.only(left: 4, bottom: 6),
             child: Text(
               'Quick Questions:',
-              style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+              style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
             ),
           ),
           Expanded(
@@ -532,7 +533,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget>
                     ),
                     child: Text(
                       faq.question(_lang),
-                      style: const TextStyle(fontSize: 12, color: Color(0xFF4A4A4A)),
+                      style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -564,7 +565,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget>
                 hintStyle: const TextStyle(fontSize: 13),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 filled: true,
-                fillColor: const Color(0xFFF5F5F5),
+                fillColor: AppColors.muted,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20),
                   borderSide: BorderSide.none,
@@ -580,7 +581,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget>
               width: 42,
               height: 42,
               decoration: const BoxDecoration(
-                color: Color(0xFFFF8B94),
+                color: AppColors.accent,
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.send_rounded, color: Colors.white, size: 20),

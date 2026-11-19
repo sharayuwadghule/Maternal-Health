@@ -1,10 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../app_state.dart';
 import '../../../core/database/local_db.dart';
-import '../../patient/home/medicine_store.dart';
+import '../../../core/models/patient_model.dart';
+import '../../../core/repositories/auth_repository.dart';
+import '../../../core/repositories/medicine_repository.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/account_sheet.dart';
 import '../../../core/widgets/sync_status_badge.dart';
+import '../../../core/widgets/ui_kit.dart';
+import '../../patient/home/medicine_store.dart';
+import '../../patient/home/patient_home_screen.dart' show CalendarText;
 
+/// Family caregiver view of the linked mother (respects her sharing consent).
 class CaregiverHomeScreen extends StatelessWidget {
   const CaregiverHomeScreen({super.key});
 
@@ -12,132 +21,176 @@ class CaregiverHomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
     final store = context.watch<MedicineStore>();
+    final theme = Theme.of(context);
     final hasConsent = LocalDb.prefsBox.get('caregiver_consent', defaultValue: true) as bool;
-    final missedDays = store.consecutiveMissedDaysBefore(DateTime.now());
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final missedDays = store.consecutiveMissedDaysBefore(now);
+
+    // Demo link: the caregiver account is linked to the demo mother.
+    final PatientModel? mother = LocalDb.patientsBox.get(MedicineRepository.demoPatientId) is Map
+        ? PatientModel.fromMap(Map<String, dynamic>.from(LocalDb.patientsBox.get(MedicineRepository.demoPatientId) as Map))
+        : null;
+    final motherName = (mother?.name ?? '').replaceAll(RegExp(r'\s*\(.*\)'), '');
+    final asha = AuthRepository.demoUsers.values.where((u) => u.id == mother?.assignedAshaId).firstOrNull;
+    final days = PatientModel.daysUntilPmsma(now);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF9F9),
       appBar: AppBar(
-        title: Text(state.translate('Caregiver Dashboard', 'देखभालकर्ता डैशबोर्ड', 'काळजी घेणारा डॅशबोर्ड')),
-        backgroundColor: const Color(0xFFFFD700),
-        actions: const [
-          SyncStatusBadge(),
-        ],
+        title: Text(state.translate('Family', 'परिवार', 'कुटुंब')),
+        actions: const [SyncStatusBadge(), SizedBox(width: 6), AccountButton()],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.fromLTRB(AppSpacing.lg - 4, AppSpacing.sm, AppSpacing.lg - 4, AppSpacing.lg),
         children: [
-          Row(
-            children: [
-              const Icon(Icons.family_restroom, size: 40, color: Color(0xFFFFD700)),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  state.translate('Supporting Priyanka More', 'प्रियंका मोरे का समर्थन', 'प्रियंका मोरे यांना समर्थन'),
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
+          Text(
+            state.translate('Supporting $motherName', '$motherName की देखभाल', '$motherName यांची काळजी'),
+            style: theme.textTheme.headlineSmall,
           ),
-          const SizedBox(height: 24),
-          
-          if (!hasConsent) ...[
+          Text(state.translate('Signed in as ${state.currentUser?.name ?? ''}', '${state.currentUser?.name ?? ''} के रूप में', '${state.currentUser?.name ?? ''} म्हणून'), style: theme.textTheme.bodyMedium),
+          const SizedBox(height: AppSpacing.md),
+
+          if (!hasConsent)
             Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.amber.shade50,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.amber.shade300),
-              ),
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(color: AppColors.peach, borderRadius: BorderRadius.circular(AppRadius.md)),
               child: Row(
                 children: [
-                  const Icon(Icons.lock, color: Colors.amber, size: 28),
-                  const SizedBox(width: 12),
+                  const Icon(Icons.lock_rounded, color: AppColors.cocoa),
+                  const SizedBox(width: AppSpacing.sm + 4),
                   Expanded(
                     child: Text(
                       state.translate(
-                        'Mother has currently paused data sharing. Only emergency contacts are accessible.',
-                        'माता ने डेटा साझाकरण रोका है। केवल आपातकालीन संपर्क उपलब्ध हैं।',
-                        'मातेने डेटा शेअरिंग थांबवले आहे. फक्त आपत्कालीन संपर्क उपलब्ध आहेत.'
+                        'She has paused sharing. Only emergency contacts are shown.',
+                        'उन्होंने जानकारी साझा करना रोका है। केवल आपातकालीन संपर्क दिखेंगे।',
+                        'त्यांनी माहिती शेअर करणे थांबवले आहे. फक्त आपत्कालीन संपर्क दिसतील.',
                       ),
-                      style: const TextStyle(fontSize: 13, color: Colors.black87),
+                      style: const TextStyle(color: AppColors.textPrimary, height: 1.4),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else ...[
+            if (mother != null)
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.lg - 4),
+                decoration: BoxDecoration(color: AppColors.butter, borderRadius: BorderRadius.circular(AppRadius.lg)),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(state.translate('Week ${mother.gestationalWeeks} of 40', 'सप्ताह ${mother.gestationalWeeks} / 40', 'आठवडा ${mother.gestationalWeeks} / ४०'),
+                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                          const SizedBox(height: 6),
+                          Text(
+                            state.translate('Due ${CalendarText.shortDate(state.language, mother.edd)}', 'प्रसव ${CalendarText.shortDate(state.language, mother.edd)}', 'प्रसूती ${CalendarText.shortDate(state.language, mother.edd)}'),
+                            style: const TextStyle(fontSize: 13, color: AppColors.cocoa),
+                          ),
+                        ],
+                      ),
+                    ),
+                    RingProgress(
+                      value: mother.gestationalWeeks / 40,
+                      size: 80,
+                      color: AppColors.cocoa,
+                      trackColor: Colors.white.withValues(alpha: 0.55),
+                      center: Text('${mother.gestationalWeeks}', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+                    ),
+                  ],
+                ),
+              ),
+            const SizedBox(height: AppSpacing.lg),
+            SectionTitle(state.translate('Medicines this week', 'इस सप्ताह दवाइयाँ', 'या आठवड्यातील औषधे')),
+            SoftCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  WeekStrip(
+                    today: today,
+                    weekdayLabels: CalendarText.weekdays(state.language),
+                    dotColor: (day) {
+                      if (day.isAfter(today)) return null;
+                      if (store.isAllTaken(day)) return AppColors.success;
+                      return day.isBefore(today) ? AppColors.danger : null;
+                    },
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  missedDays >= 3
+                      ? StatusPill.danger(state.translate('Missed $missedDays days – please remind her', '$missedDays दिन छूटे – कृपया याद दिलाएं', '$missedDays दिवस चुकले – कृपया आठवण करून द्या'))
+                      : StatusPill.success(state.translate('Taking medicines regularly', 'नियमित दवा ले रही हैं', 'नियमित औषधे घेत आहेत')),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.lg - 4),
+              decoration: BoxDecoration(color: AppColors.peach, borderRadius: BorderRadius.circular(AppRadius.lg)),
+              child: Row(
+                children: [
+                  const Icon(Icons.event_available_rounded, color: AppColors.accent, size: 32),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Text(
+                      days == 0
+                          ? state.translate('Free checkup today at the PHC. Please go with her.', 'आज PHC पर मुफ्त जांच। कृपया साथ जाएं।', 'आज PHC येथे मोफत तपासणी. कृपया सोबत जा.')
+                          : state.translate('Free checkup in $days days at the PHC. Please go with her.', '$days दिन में PHC पर मुफ्त जांच। कृपया साथ जाएं।', '$days दिवसांत PHC येथे मोफत तपासणी. कृपया सोबत जा.'),
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary, height: 1.4),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
-          ] else ...[
-            _buildInfoCard(
-              context,
-              state.translate('Next Clinic Checkup', 'अगली क्लिनिक जांच', 'पुढील क्लिनिक तपासणी'),
-              state.translate('9th of this Month (PMSMA Day)', 'महीने की 9 तारीख (PMSMA दिन)', 'महिन्याची ९ तारीख (PMSMA दिवस)'),
-              Icons.calendar_month,
-              Colors.blue,
-            ),
-            const SizedBox(height: 16),
-            
-            _buildInfoCard(
-              context,
-              state.translate('Medicine Adherence (Past 7 Days)', 'दवा का पालन (पिछले 7 दिन)', 'औषध पालन (मागील ७ दिवस)'),
-              missedDays >= 3
-                  ? state.translate('⚠️ Mother has missed doses recently ($missedDays days missed)', '⚠️ हाल ही में खुराक छूटी है ($missedDays दिन छूटे)', '⚠️ मातेने औषधे चुकवली आहेत ($missedDays दिवस चुकले)')
-                  : state.translate('✅ Daily doses taken regularly', '✅ दैनिक दवाएं नियमित रूप से ली गईं', '✅ नियमितपणे औषधे घेतली आहेत'),
-              Icons.medication,
-              missedDays >= 3 ? Colors.orange : Colors.green,
-            ),
-            const SizedBox(height: 16),
           ],
-          
-          _buildInfoCard(
-            context,
-            state.translate('Assigned ASHA Worker Contact', 'निर्धारित आशा कार्यकर्ता संपर्क', 'नियुक्त आशा कार्यकर्ता संपर्क'),
-            'Savita Tai: +91 9800000021',
-            Icons.call,
-            Colors.red,
-          ),
+          const SizedBox(height: AppSpacing.lg),
+          SectionTitle(state.translate('Emergency contacts', 'आपातकालीन संपर्क', 'आपत्कालीन संपर्क')),
+          if (asha != null) ...[
+            _ContactCard(name: asha.name, role: state.translate('ASHA worker', 'आशा कार्यकर्ता', 'आशा कार्यकर्ती'), phone: asha.phone, tint: AppColors.mint, color: AppColors.success),
+            const SizedBox(height: AppSpacing.sm + 4),
+          ],
+          _ContactCard(name: state.translate('Ambulance', 'एम्बुलेंस', 'रुग्णवाहिका'), role: '108', phone: '108', tint: AppColors.blush, color: AppColors.danger),
         ],
       ),
     );
   }
+}
 
-  Widget _buildInfoCard(BuildContext context, String title, String subtitle, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.08),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+class _ContactCard extends StatelessWidget {
+  final String name;
+  final String role;
+  final String phone;
+  final Color tint;
+  final Color color;
+  const _ContactCard({required this.name, required this.role, required this.phone, required this.tint, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SoftCard(
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 28,
-            backgroundColor: color.withValues(alpha: 0.1),
-            child: Icon(icon, size: 28, color: color),
+          Container(
+            decoration: BoxDecoration(color: tint, shape: BoxShape.circle),
+            child: InitialsAvatar(name, size: 46, color: color),
           ),
-          const SizedBox(width: 18),
+          const SizedBox(width: AppSpacing.sm + 4),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(fontSize: 14, color: Colors.grey, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
+                Text(name, style: theme.textTheme.titleMedium),
+                Text(role, style: theme.textTheme.bodySmall),
               ],
+            ),
+          ),
+          Material(
+            color: AppColors.primary,
+            shape: const CircleBorder(),
+            child: IconButton(
+              onPressed: () => launchUrl(Uri(scheme: 'tel', path: phone)),
+              icon: const Icon(Icons.call_rounded, color: Colors.white, size: 20),
             ),
           ),
         ],

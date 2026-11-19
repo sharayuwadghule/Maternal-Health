@@ -32,7 +32,7 @@ class PatientRiskProfile {
   }
 
   String get primaryRiskLabel {
-    if (missedMedications3PlusDays) return '🚨 Medicines Missed 3+ Days';
+    if (missedMedications3PlusDays) return 'Medicines Missed 3+ Days';
     if (hasHighBP) return 'High BP Alert';
     if (hasSevereAnemia) return 'Severe Anemia';
     if (isHighRiskAge) return 'Age Risk Factor';

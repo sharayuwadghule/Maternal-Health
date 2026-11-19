@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_theme.dart';
+import 'package:provider/provider.dart';
 import 'medicine_store.dart';
+import 'patient_home_screen.dart' show CalendarText;
+import '../../../core/widgets/ui_kit.dart';
 import '../../../app_state.dart';
 
 class MedicineScreen extends StatefulWidget {
@@ -17,7 +21,6 @@ class _MedicineScreenState extends State<MedicineScreen> {
   void initState() {
     super.initState();
     _store.addListener(_onStoreChange);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _checkAndShowReminder());
   }
 
   @override
@@ -28,240 +31,166 @@ class _MedicineScreenState extends State<MedicineScreen> {
 
   void _onStoreChange() => setState(() {});
 
-  void _checkAndShowReminder() {
-    final level = _store.alertLevel(_today);
-    if (level == MissedAlert.patientReminder) {
-      _showReminderDialog();
-    } else if (level == MissedAlert.ashaAlert) {
-      _showAshaAlertDialog();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final state = AppState.instance;
+    final state = context.watch<AppState>();
+    final theme = Theme.of(context);
     final level = _store.alertLevel(_today);
-    final historyDates = List.generate(7, (i) => _today.subtract(Duration(days: 6 - i)));
-    final todayProgress = _store.getDailyProgress(_today);
+    final meds = _store.assignedMedicines;
+    final takenToday = _store.takenCount(_today);
     final allDone = _store.isAllTaken(_today);
+    final weekStart = DateTime(_today.year, _today.month, _today.day - 6);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF9F9),
-      appBar: AppBar(
-        title: Text(state.translate('Daily Medicines', 'दैनिक दवाएं', 'रोजची औषधे')),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (level != MissedAlert.none)
-              _buildReminderBanner(level == MissedAlert.ashaAlert, state),
-            
-            _buildProgressCard(todayProgress, allDone, state),
-            const SizedBox(height: 32),
-            
-            Text(
-              state.translate('Today\'s List', 'आज की सूची', 'आजची यादी'),
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            ..._store.assignedMedicines.map((med) => _buildMedicineTile(med, state)),
-            
-            const SizedBox(height: 32),
-            Text(
-              state.translate('Weekly History', 'साप्ताहिक इतिहास', 'साप्ताहिक इतिहास'),
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            _buildHistoryStrip(historyDates, state),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildReminderBanner(bool isCritical, AppState state) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 24),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isCritical ? const Color(0xFFFFEEEE) : const Color(0xFFFFF7E6),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isCritical ? Colors.red.shade200 : Colors.orange.shade200),
-      ),
-      child: Row(
+      appBar: AppBar(title: Text(state.translate('My medicines', 'मेरी दवाइयाँ', 'माझी औषधे'))),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(AppSpacing.lg - 4, AppSpacing.sm, AppSpacing.lg - 4, AppSpacing.lg),
         children: [
-          Icon(isCritical ? Icons.emergency : Icons.warning_amber, color: isCritical ? Colors.red : Colors.orange),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              isCritical 
-                ? state.translate('Urgently take your medicines!', 'तुरंत अपनी दवाएं लें!', 'लगेच तुमची औषधे घ्या!')
-                : state.translate('Don\'t forget your pills today.', 'आज अपनी दवाएं लेना न भूलें।', 'आज तुमची औषधे घ्यायला विसरू नका।'),
-              style: TextStyle(fontWeight: FontWeight.bold, color: isCritical ? Colors.red.shade900 : Colors.orange.shade900),
+          // ── Today's progress (ring card) ────────────────────────────
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.lg - 4),
+            decoration: BoxDecoration(
+              color: allDone ? AppColors.mint : AppColors.lavender,
+              borderRadius: BorderRadius.circular(AppRadius.lg),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProgressCard(double progress, bool complete, AppState state) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: complete 
-            ? [const Color(0xFFB4E6B4), const Color(0xFF90EE90)]
-            : [const Color(0xFFFFD3B6), const Color(0xFFFFAAA5)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 4))],
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                complete ? state.translate('Excellent!', 'उत्कृष्ट!', 'उत्कृष्ट!') : state.translate('Today\'s Goal', 'आज का लक्ष्य', 'आजचे ध्येय'),
-                style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              Icon(complete ? Icons.check_circle : Icons.trending_up, color: Colors.white, size: 30),
-            ],
-          ),
-          const SizedBox(height: 16),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: LinearProgressIndicator(
-              value: progress,
-              minHeight: 12,
-              backgroundColor: Colors.white30,
-              valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            complete 
-              ? state.translate('All medicines taken!', 'सभी दवाएं ली गईं!', 'सर्व औषधे घेतली!')
-              : '${(progress * 100).toInt()}% ${state.translate('Complete', 'पूर्ण', 'पूर्ण')}',
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMedicineTile(AssignedMedicine med, AppState state) {
-    final taken = _store.isTaken(med.id, _today);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: InkWell(
-        onTap: () => _store.toggle(med.id, _today),
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: taken ? const Color(0xFFE5F6DF) : Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: taken ? Colors.green.shade300 : Colors.black12, width: 1.5),
-          ),
-          child: Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: taken ? Colors.green : const Color(0xFFF5F5F5),
-                child: Icon(taken ? Icons.check : Icons.medication, color: taken ? Colors.white : Colors.grey),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      state.translate(med.name, med.nameHi, med.nameMr),
-                      style: TextStyle(
-                        fontSize: 18, 
-                        fontWeight: FontWeight.bold,
-                        color: taken ? Colors.green.shade900 : Colors.black87,
-                        decoration: taken ? TextDecoration.lineThrough : null,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        allDone
+                            ? state.translate('All done for today!', 'आज की सभी दवाएं ली गईं!', 'आजची सर्व औषधे घेतली!')
+                            : state.translate("Today's goal", 'आज का लक्ष्य', 'आजचे ध्येय'),
+                        style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                       ),
-                    ),
-                    Text(
-                      '${med.dose} • ${med.timing}',
-                      style: TextStyle(color: Colors.grey.shade600),
-                    ),
-                  ],
+                      const SizedBox(height: 6),
+                      Text(
+                        state.translate(
+                          '$takenToday of ${meds.length} medicines taken',
+                          '${meds.length} में से $takenToday दवाएं ली गईं',
+                          '${meds.length} पैकी $takenToday औषधे घेतली',
+                        ),
+                        style: const TextStyle(fontSize: 13.5, color: AppColors.textSecondary),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        state.translate('Tap a medicine to mark it taken.', 'दवा लेने पर उस पर टैप करें।', 'औषध घेतल्यावर त्यावर टॅप करा.'),
+                        style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              Checkbox(
-                value: taken,
-                onChanged: (_) => _store.toggle(med.id, _today),
-                activeColor: Colors.green,
-              ),
-            ],
+                const SizedBox(width: AppSpacing.md),
+                RingProgress(
+                  value: meds.isEmpty ? 0 : takenToday / meds.length,
+                  size: 96,
+                  color: allDone ? AppColors.success : const Color(0xFF6B4FD8),
+                  trackColor: Colors.white.withValues(alpha: 0.7),
+                  center: Text(
+                    '$takenToday/${meds.length}',
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ),
-    );
-  }
+          const SizedBox(height: AppSpacing.md),
 
-  Widget _buildHistoryStrip(List<DateTime> dates, AppState state) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: dates.map((date) {
-        final allTaken = _store.isAllTaken(date);
-        final isToday = DateUtils.isSameDay(date, _today);
-        return Column(
-          children: [
+          // ── Missed-dose banner ─────────────────────────────────────
+          if (level != MissedAlert.none) ...[
             Container(
-              width: 36,
-              height: 36,
+              padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
-                color: allTaken ? Colors.green : (isToday ? Colors.white : const Color(0xFFFFE4E4)),
-                shape: BoxShape.circle,
-                border: Border.all(color: isToday ? const Color(0xFFFF8B94) : Colors.transparent, width: 2),
+                color: level == MissedAlert.ashaAlert ? AppColors.blush : AppColors.peach,
+                borderRadius: BorderRadius.circular(AppRadius.md),
               ),
-              child: Icon(
-                allTaken ? Icons.check : (isToday ? Icons.timer : Icons.close),
-                size: 18,
-                color: allTaken ? Colors.white : (isToday ? const Color(0xFFFF8B94) : Colors.red),
+              child: Row(
+                children: [
+                  Icon(
+                    level == MissedAlert.ashaAlert ? Icons.error_rounded : Icons.notifications_active_rounded,
+                    color: level == MissedAlert.ashaAlert ? AppColors.danger : AppColors.accent,
+                  ),
+                  const SizedBox(width: AppSpacing.sm + 4),
+                  Expanded(
+                    child: Text(
+                      level == MissedAlert.ashaAlert
+                          ? state.translate(
+                              'You missed medicines for several days. Your ASHA has been informed – please take them today.',
+                              'आपने कई दिन दवाएं नहीं लीं। आपकी आशा को सूचित किया गया है – कृपया आज दवा लें।',
+                              'तुम्ही अनेक दिवस औषधे घेतली नाहीत. तुमच्या आशाला कळवले आहे – कृपया आज औषधे घ्या.')
+                          : state.translate(
+                              "Don't forget your medicines today.",
+                              'आज अपनी दवाएं लेना न भूलें।',
+                              'आज तुमची औषधे घ्यायला विसरू नका.'),
+                      style: const TextStyle(fontSize: 13.5, color: AppColors.textPrimary, height: 1.4, fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 6),
-            Text('${date.day}', style: const TextStyle(fontSize: 12)),
+            const SizedBox(height: AppSpacing.md),
           ],
-        );
-      }).toList(),
-    );
-  }
 
-  void _showReminderDialog() {
-    final state = AppState.instance;
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text(state.translate('Reminder!', 'याद दिलाएं!', 'आठवण!')),
-        content: Text(state.translate('Please take your medicines.', 'कृपया अपनी दवाएं लें।', 'कृपया तुमची औषधे घ्या।')),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(state.translate('OK', 'ठीक है', 'ठीक आहे'))),
-        ],
-      ),
-    );
-  }
+          // ── Today's checklist ──────────────────────────────────────
+          SectionTitle(state.translate('Today', 'आज', 'आज')),
+          for (final (i, med) in meds.indexed)
+            ChecklistTile(
+              name: state.translate(med.name, med.nameHi, med.nameMr),
+              timing: state.pick(med.timing),
+              dose: state.pick(med.dose),
+              taken: _store.isTaken(med.id, _today),
+              isLast: i == meds.length - 1,
+              tint: const [AppColors.peach, AppColors.mint, AppColors.lavender][i % 3],
+              iconColor: const [AppColors.accent, AppColors.success, Color(0xFF6B4FD8)][i % 3],
+              onTap: () => _store.toggle(med.id, _today),
+            ),
+          const SizedBox(height: AppSpacing.md),
 
-  void _showAshaAlertDialog() {
-    final state = AppState.instance;
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text(state.translate('Emergency!', 'आपातकालीन!', 'आणीबाणी!'), style: const TextStyle(color: Colors.red)),
-        content: Text(state.translate('ASHA worker alerted.', 'आशा को सूचित किया।', 'आशाला कळवले।')),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(state.translate('OK', 'ठीक है', 'ठीक आहे'))),
+          // ── Last 7 days ────────────────────────────────────────────
+          SectionTitle(state.translate('Last 7 days', 'पिछले 7 दिन', 'मागील ७ दिवस')),
+          SoftCard(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.md, horizontal: AppSpacing.sm),
+            child: Row(
+              children: [
+                for (var i = 0; i < 7; i++)
+                  Expanded(
+                    child: Builder(builder: (context) {
+                      final day = DateTime(weekStart.year, weekStart.month, weekStart.day + i);
+                      final isToday = i == 6;
+                      final done = _store.isAllTaken(day);
+                      final (Color bg, Color fg, IconData icon) = done
+                          ? (AppColors.successContainer, AppColors.success, Icons.check_rounded)
+                          : isToday
+                              ? (AppColors.muted, AppColors.textSecondary, Icons.more_horiz_rounded)
+                              : (AppColors.dangerContainer, AppColors.danger, Icons.close_rounded);
+                      return Column(
+                        children: [
+                          Text(
+                            CalendarText.weekdays(state.language)[day.weekday - 1],
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              color: isToday ? AppColors.textPrimary : AppColors.textSecondary,
+                              fontWeight: isToday ? FontWeight.w700 : FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
+                            child: Icon(icon, size: 18, color: fg),
+                          ),
+                          const SizedBox(height: 6),
+                          Text('${day.day}', style: theme.textTheme.bodySmall),
+                        ],
+                      );
+                    }),
+                  ),
+              ],
+            ),
+          ),
         ],
       ),
     );

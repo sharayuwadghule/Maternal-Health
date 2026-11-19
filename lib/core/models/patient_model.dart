@@ -70,13 +70,29 @@ class PatientModel {
     return 3;
   }
 
-  int get daysUntilNextPmsmaCheckup {
-    final now = DateTime.now();
+  int get daysUntilNextPmsmaCheckup => daysUntilPmsma(DateTime.now());
+
+  /// Days until the next PMSMA clinic day (9th of every month), counted in
+  /// calendar days. Comparing dates only avoids the off-by-one that occurs
+  /// when the current time-of-day is included (e.g. "0 days" on the 8th).
+  static int daysUntilPmsma(DateTime now) {
+    final today = DateTime(now.year, now.month, now.day);
     var next9th = DateTime(now.year, now.month, 9);
-    if (now.day > 9) {
+    if (today.isAfter(next9th)) {
       next9th = DateTime(now.year, now.month + 1, 9);
     }
-    return next9th.difference(now).inDays;
+    // Use UTC dates so daylight-saving shifts never produce 23-hour days.
+    final a = DateTime.utc(today.year, today.month, today.day);
+    final b = DateTime.utc(next9th.year, next9th.month, next9th.day);
+    return b.difference(a).inDays;
+  }
+
+  /// Copy with updated HRP status.
+  PatientModel withHrp({required bool confirmed, String? category}) {
+    final map = toMap()
+      ..['is_confirmed_hrp'] = confirmed
+      ..['hrp_category'] = category;
+    return PatientModel.fromMap(map);
   }
 
   Map<String, dynamic> toMap() {
